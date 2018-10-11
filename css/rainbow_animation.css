@@ -1,0 +1,24 @@
+
+.rainbowText {
+    display:inline-block;
+    background-image: -webkit-gradient(linear, left top, right top,
+	color-stop(  0%, red),
+	color-stop( 14%, orange),
+	color-stop( 28%, yellow),
+	color-stop( 42%, green),
+	color-stop( 56%, blue),
+	color-stop( 70%, indigo),
+	color-stop( 84%, violet),
+	color-stop(100%, red)
+    );
+    -webkit-background-clip:text;
+    color:transparent;
+    
+    -webkit-animation:rainbowText 10s linear infinite alternate;
+}
+@-webkit-keyframes rainbowText {
+      0% {background-position:   0px 0px;}
+    
+    /* なぜか%指定ができないため1000pxという適当な値を */
+    100% {background-position:1000px 0px;}
+}
