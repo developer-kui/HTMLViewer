@@ -1,6 +1,6 @@
 $(function () {
     try {
-        const VERSION = "4.0.0.2";
+        const VERSION = "4.0.0.3";
         /************** 変更可能パラメータ **********/
         // コメントの最大表示数
         const DISPLAY_COMMENT = 3;
@@ -22,7 +22,7 @@ $(function () {
         const IS_SHOW_SYSTEM_COMMENT = true;
         // 投稿者のコメントの表示
         const IS_SHOW_NAME = false;
-        
+
         /************************************************/
         /* 情報欄(コメントの右側)に表示させる情報のパターン */
         //サービス名(YoubueLiveやOPENRECやTwitch)
@@ -108,7 +108,7 @@ $(function () {
         }
         function addComment(json_data, complete_function) {
             workCustomStamp(json_data);
-            let name = json_data.name;
+            let name = json_data.user_data.name;
             let comment = json_data.comment;
             if (comment == null || 0 == comment.length) {
                 comment = "　";
@@ -254,9 +254,9 @@ $(function () {
 
         function init() {
             const obj = new Object();
-            obj["name"] = "kui";
+            obj["user_data"] = { name: "kui", user_id: "" };
             obj["comment"] = "Hello　MCV(^^)/" + VERSION;
-            const stream_data =  {stream_name:"",service_name:""};
+            const stream_data = { stream_name: "", service_name: "" };
             obj["stream_data"] = stream_data;
             pushComment(obj);
         }
