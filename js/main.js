@@ -1,6 +1,6 @@
 $(function () {
     try {
-        const VERSION = "4.0.0.3";
+        const VERSION = "4.1.0.0";
         /************** 変更可能パラメータ **********/
         // コメントの最大表示数
         const DISPLAY_COMMENT = 3;
@@ -31,8 +31,10 @@ $(function () {
         const INFO_INDEX = 1;
         //配信名(MCVで名前を付けたもの)
         const INFO_STREAM_NAME = 2;
+        //非表示
+        const NOT_DISPLAY = 3;
         //表示させたい情報を上記から選ぶ
-        const SHOW_INFO = INFO_SERVICE_NAME;
+        const SHOW_INFO = NOT_DISPLAY;
         /************************************************/
 
         /******************************************/
@@ -122,8 +124,11 @@ $(function () {
                     provider = json_data.stream_data.stream_name;
                     break;
                 case INFO_SERVICE_NAME:
-                default:
                     provider = json_data.stream_data.service_name;
+                    break;
+                case NOT_DISPLAY:
+                default:
+                    provider = "";
                     break;
             }
             let type = json_data.type;
