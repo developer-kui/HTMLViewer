@@ -1,6 +1,6 @@
 /* メインのコメントの色と影の設定 */
 .white_text {
-   color: #FFFFFF;
+   color: rgba(255, 255, 255, 1.0);
    /* -webkit-text-stroke-width: 1px; */
    /* -webkit-text-stroke-color: black; */
    text-shadow: 
@@ -16,13 +16,13 @@
 
 /* メインのコメントの色と影の設定 */
 .system_comment {
-   color: #FF0000;
+   color: rgba(255, 0, 0, 1.0);
    text-shadow: #FF8888 2px 2px 1px, #FF8888 -2px 2px 1px, #FF8888 2px -2px 1px, #FF8888 -2px -2px 1px;
 }
 
 /* サービス(YoutubeLiveやニコニコ)のコメントの色と影の設定 */
 .white_provider_text {
-    color: #FFFFFF;
+    color: rgba(255, 255, 255, 1.0);
     text-shadow: 
    black 1px 0px,  black -1px 0px,
    black 0px -1px, black 0px 1px,
@@ -66,7 +66,7 @@
     /* コメントの背景色(RGBA) */
     background-color: rgba(0, 0, 0, 0.0);
     transition: all 200ms 0s ease;
-    border-left: 5px double #00000000;
+    border-left: 5px double rgba(0, 0, 0, 0.0);
     bottom: 2px;
 	font-weight: 900;
     
