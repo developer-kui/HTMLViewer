@@ -6,34 +6,34 @@
     <meta name="Description" content="">
     <title>MCV</title>
 
-    <link rel="shortcut icon" href="https://develop-kui.com/mcv/viewer4/default/favicon.ico" />
-    <script type="text/javascript" src="https://develop-kui.com/mcv/viewer4/default/js/jquery-3.3.1.min.js"></script>
-    <script type="text/javascript" src="https://develop-kui.com/mcv/viewer4/default/js/jquery-ui.min.js"></script>
-    <script type="text/javascript" src="https://develop-kui.com/mcv/viewer4/default/js/velocity.min.js"></script>
+    <link rel="shortcut icon" href="./favicon.ico" />
+    <script type="text/javascript" src="./js/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="./js/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="./js/velocity.min.js"></script>
     <!--OBSのキャッシュ無効化対応-->
     <script>
         $(function () {
             var date = (new Date).getTime();
             var script = document.createElement('script');
             script.type = 'text/javascript'
-            script.src = 'https://develop-kui.com/mcv/viewer4/default/js/mcv_client.js?' + date;
+            script.src = './js/mcv_client.js?' + date;
             $('head script:last').after(script);
             script = document.createElement('script');
             script.type = 'text/javascript'
-            script.src = 'https://develop-kui.com/mcv/viewer4/default/js/main.js?' + date;
+            script.src = './js/main.js?' + date;
             $('head script:last').after(script);
         });
     </script>
 
-    <link type="text/css" rel="stylesheet" href="https://develop-kui.com/mcv/viewer4/default/css/jquery-ui.min.css" />
-    <link type="text/css" rel="stylesheet" href="https://develop-kui.com/mcv/viewer4/default/css/rainbow_animation.css" />
+    <link type="text/css" rel="stylesheet" href="./css/jquery-ui.min.css" />
+    <link type="text/css" rel="stylesheet" href="./css/rainbow_animation.css" />
     <!--OBSのキャッシュ無効化対応-->
     <script>
         $(function () {
             var link = document.createElement('link');
             link.type = 'text/css'
             link.rel = 'stylesheet'
-            link.href = 'https://develop-kui.com/mcv/viewer4/default/css/comment.css?' + (new Date).getTime();
+            link.href = './css/comment.css?' + (new Date).getTime();
             $('head link:last').after(link);
         });
     </script>
