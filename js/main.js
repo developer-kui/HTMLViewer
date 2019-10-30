@@ -223,7 +223,7 @@ $(function () {
             message.appendTo(message_box);
             // 新規コメントを左に移動
             message.velocity({
-                translateX: ['-200%']
+                translateX: ['-300%']
             }, {
                 duration: 100,
                 queue: FIRST_ANIMATION,
@@ -245,7 +245,7 @@ $(function () {
         function init() {
             const obj = new Object();
             obj["user_data"] = { name: "test", user_id: "" };
-            obj["comment"] = "Hello　MCV(^^)/" + VERSION;
+            obj["comment"] = "Hello　MCV(^^)/dpqiwdpdqojdpqwodjqpwodjqwpodjqpdoqjwdpojdpoqwjdpqodjqpdojpodjpqodjqpodjqpwdojqdpoqwdjpqodjpqwdjwpd" + VERSION;
             const stream_data = { stream_name: "", service_name: "" };
             obj["stream_data"] = stream_data;
             pushComment(obj);
