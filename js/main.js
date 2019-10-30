@@ -1,9 +1,11 @@
+
 $(function () {
     try {
         const VERSION = "4.1.0.0";
         /************** 変更可能パラメータ **********/
         // コメントの最大表示数
-        const DISPLAY_COMMENT = 3;
+        // 注意: あまり大きな数値にするとパフォーマンスが著しく低下します。大体10~20あたりが適切です。
+        const DISPLAY_COMMENT = 10;
         // コメントの表示加速度(1秒以内にコメントが連続するとこの値だけ加速)
         // ※一秒以内にコメントが到着しないと速度はMIN_COMMENT_DURATIONまで戻る
         const COMMENT_ACCELERATION = 100;
@@ -22,6 +24,8 @@ $(function () {
         const IS_SHOW_SYSTEM_COMMENT = true;
         // 投稿者のコメントの表示
         const IS_SHOW_NAME = false;
+        //ランダムにコメントが流れる高さ
+        const WINDOW_HEIGHT = 500;
 
         /************************************************/
         /* 情報欄(コメントの右側)に表示させる情報のパターン */
@@ -219,47 +223,28 @@ $(function () {
             message.appendTo(message_box);
             // 新規コメントを左に移動
             message.velocity({
-                translateX: ['-109%']
+                translateX: ['-200%']
             }, {
-                    duration: calcDuration(now_time),
-                    queue: FIRST_ANIMATION,
-                    complete: complete_function
-                });
+                duration: 100,
+                queue: FIRST_ANIMATION,
+                complete: complete_function,
+                easing: 'linear',
+            });
 
-            if (0 < comment_array.length) {
-                //コメントを上に移動 
-                let move_up = message.outerHeight(true);
-                let count = comment_array.length;
-                $.each(comment_array,
-                    function (index, elem) {
-                        //elem.velocity("finish");
-                        elem.velocity({
-                            translateY: '-=' + move_up
-                        }, {
-                                queue: false,
-                                duration: COMMENT_UP_DURATION,
-                                easing: [0.55, 0.085, 0.68, 0.53],
-                                complete: function (elements) {
-                                    count = count - 1;
-                                    if (count == 0) {
-                                        message.dequeue(FIRST_ANIMATION);
-                                        comment_array.push(message);
-                                    }
-                                }
-                            });
-                    }
-                );
-            } else {
-                message.dequeue(FIRST_ANIMATION);
-                comment_array.push(message);
-            }
+            let move_up = Math.floor(Math.random() * WINDOW_HEIGHT);
+            message.css({
+                position: 'absolute',
+                bottom: move_up + 'px',
+            });
+            message.dequeue(FIRST_ANIMATION);
+            comment_array.push(message);
         }
 
         // コメント追加用関数
 
         function init() {
             const obj = new Object();
-            obj["user_data"] = { name: "kui", user_id: "" };
+            obj["user_data"] = { name: "test", user_id: "" };
             obj["comment"] = "Hello　MCV(^^)/" + VERSION;
             const stream_data = { stream_name: "", service_name: "" };
             obj["stream_data"] = stream_data;

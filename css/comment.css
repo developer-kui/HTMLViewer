@@ -65,7 +65,7 @@
     border-style: none none none none;
     /* コメントの背景色(RGBA) */
     background-color: rgba(0, 0, 0, 0.0);
-    transition: all 200ms 0s ease;
+    transition: all 10000ms 0s linear;
     border-left: 5px double rgba(0, 0, 0, 0.0);
     bottom: 2px;
 	font-weight: 900;
