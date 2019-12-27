@@ -1,6 +1,6 @@
 $(function () {
     try {
-        const VERSION = "4.2.0.0";
+        const VERSION = "4.2.0.1";
         /************** 変更可能パラメータ **********/
         // コメントの最大表示数
         const DISPLAY_COMMENT = 3;
@@ -138,11 +138,11 @@ $(function () {
         function addComment(json_data, complete_function) {
             workCustomStamp(json_data);
             const name = json_data.user_data.name;
-            const comment = json_data.comment;
+            var comment = json_data.comment;
             if (comment == null || 0 == comment.length) {
                 comment = "　";
             }
-            const provider = "";
+            var provider = "";
             switch (SHOW_INFO) {
                 case INFO_INDEX:
                     provider = json_data.index;
