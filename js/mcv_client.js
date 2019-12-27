@@ -6,7 +6,7 @@ let comment_listener = null;
 let mcv_url = null;
 // Localアクセスサーバー
 const MCV_WS_URL = "ws://localhost:51021";
-const VERSION = "4.0.0.1";
+const VERSION = "4.0.0.2";
 
 
 function StartReceiveComment(url = MCV_WS_URL) {
@@ -40,11 +40,14 @@ function pushComment(json){
 }
 function SendComment() {
     if (0 < comment_obj_array.length) {
-        json = comment_obj_array[0];
-        comment_obj_array.shift();
-        if (comment_listener) {
-            comment_listener(json, SendComment);
-        }
+        setTimeout(
+            function () {
+                json = comment_obj_array[0];
+                comment_obj_array.shift();
+                if (comment_listener) {
+                    comment_listener(json, SendComment);
+                }
+            }, 0);
     } else {
         setTimeout(
             function () {

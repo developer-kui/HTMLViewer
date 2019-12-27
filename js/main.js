@@ -1,6 +1,6 @@
 $(function () {
     try {
-        const VERSION = "4.1.0.0";
+        const VERSION = "4.2.0.0";
         /************** 変更可能パラメータ **********/
         // コメントの最大表示数
         const DISPLAY_COMMENT = 3;
@@ -17,13 +17,12 @@ $(function () {
         // 0を指定することで自動でコメントが消えなくなります
         const DELETE_COMMENT_TIME = 0;
         // 表示されたコメントが消える場合に右に戻る速度
-        const DELETE_COMMENT_DURATION = 300;
+        const DELETE_COMMENT_DURATION = 100;
         // Sytem用のコメントです(広告とか放送閉じるとか(ニコ生))
         const IS_SHOW_SYSTEM_COMMENT = true;
         // 投稿者のコメントの表示
         const IS_SHOW_NAME = false;
 
-        /************************************************/
         /* 情報欄(コメントの右側)に表示させる情報のパターン */
         //サービス名(YoubueLiveやOPENRECやTwitch)
         const INFO_SERVICE_NAME = 0;
@@ -35,9 +34,18 @@ $(function () {
         const NOT_DISPLAY = 3;
         //表示させたい情報を上記から選ぶ
         const SHOW_INFO = NOT_DISPLAY;
-        /************************************************/
 
-        /******************************************/
+        const STAMP_DATA = {
+            //Key（左）に置き換え文字
+            //Value（右）に対象の画像URL
+            //HTTP経由でもOK
+            // "(^^)/": ["./img/kawaii.png"]
+        };
+
+        /************************************************/
+        //Debugモード
+        const IS_DEBUG = false;
+        /************************************************/
         // 時間情報のDataKey
         const DATA_ADD_TIME_KEY = "ADD_TIME_KEY";
 
@@ -45,15 +53,31 @@ $(function () {
         const TYPE_SYSTEM_COMMENT = 1;
 
         // コメント格納用変数
-        let message_box = $('#message_box');
-
-        let STAMP_DATA = {};
+        const message_box = $('#message_box');
 
         // コメント格納用配列
-        let comment_array = new Array();
+        const comment_array = new Array();
+
         let comment_add_time = new Date().getTime();
         let duration = MIN_COMMENT_DURATION;
+        /******************************************/
 
+        function deleteElement(elem) {
+            elem.velocity("finish").velocity({
+                translateX: ['100%']
+            }, {
+                duration: DELETE_COMMENT_DURATION,
+                queue: false,
+                complete: function (elements) {
+                    setTimeout(function () {
+                        const delete_array = $.inArray(elem, comment_array)
+                        for (var i = 0; i <= delete_array; i++) {
+                            comment_array.shift().remove();
+                        }
+                    }, DELETE_COMMENT_DURATION);
+                }
+            });
+        }
         function deleteComment(delete_time) {
             if (delete_time <= 0) {
                 return;
@@ -61,21 +85,10 @@ $(function () {
             setInterval(function () {
                 $.each(comment_array,
                     function (index, elem) {
-                        let add_time = $.data(elem, DATA_ADD_TIME_KEY);
-                        let now = new Date();
+                        const add_time = $.data(elem, DATA_ADD_TIME_KEY);
+                        const now = new Date();
                         if (add_time + delete_time < now.getTime()) {
-                            elem.velocity("finish").velocity({
-                                translateX: ['100%']
-                            }, {
-                                    duration: DELETE_COMMENT_DURATION,
-                                    queue: false,
-                                    complete: function () {
-                                        let delete_array = $.inArray(elem, comment_array)
-                                        for (let i = 0; i <= delete_array; i++) {
-                                            comment_array.shift().remove();
-                                        }
-                                    }
-                                });
+                            deleteElement(elem);
                             return false;
                         }
                     }
@@ -84,7 +97,7 @@ $(function () {
         }
         // コメントアニメーション計算処理
         function calcDuration(now_time) {
-            let diff = now_time - comment_add_time;
+            const diff = now_time - comment_add_time;
             if (diff < 1500) {
                 if (MAX_COMMENT_DURATION < duration) {
                     duration -= COMMENT_ACCELERATION;
@@ -97,25 +110,39 @@ $(function () {
         }
 
         function workCustomStamp(json_data) {
-            if (STAMP_DATA[json_data.comment]) {
-                let list = new Array();
-                let image_obj = new Object();
-                image_obj["start"] = 0;
-                image_obj["end"] = 0;
-                image_obj["url"] = STAMP_DATA[json_data.comment];
-                json_data.comment = "";
-                list.push(image_obj);
-                json_data.stamp_data_list = list;
+            for (key in STAMP_DATA) {
+                var start_index = 0;
+                var search_index = 0;
+                while (0 <= search_index) {
+                    search_index = json_data.comment.indexOf(key, start_index)
+                    if (0 <= search_index) {
+                        var image_obj = new Object();
+                        image_obj["start"] = search_index;
+                        image_obj["end"] = search_index + key.length - 1;
+                        const values = STAMP_DATA[key];
+                        const index = 0;
+                        if (1 < values.length) {
+                            index = getRandomInt(values.length);
+                        }
+                        image_obj["url"] = values[index];
+                        start_index = image_obj["end"];
+                        if (json_data.stamp_data_list == null) {
+                            json_data.stamp_data_list = new Array();
+                        }
+                        json_data.stamp_data_list.push(image_obj);
+                    }
+
+                }
             }
         }
         function addComment(json_data, complete_function) {
             workCustomStamp(json_data);
-            let name = json_data.user_data.name;
-            let comment = json_data.comment;
+            const name = json_data.user_data.name;
+            const comment = json_data.comment;
             if (comment == null || 0 == comment.length) {
                 comment = "　";
             }
-            let provider = json_data.index;
+            const provider = "";
             switch (SHOW_INFO) {
                 case INFO_INDEX:
                     provider = json_data.index;
@@ -128,45 +155,46 @@ $(function () {
                     break;
                 case NOT_DISPLAY:
                 default:
-                    provider = "";
                     break;
             }
-            let type = json_data.type;
-            let stamp_data_list = json_data.stamp_data_list;
+            const type = json_data.type;
+            const stamp_data_list = json_data.stamp_data_list;
             createComment(name, comment, provider, type, stamp_data_list, complete_function);
         }
         // コメント追加用関数
         function createComment(name, comment, provider, type, stamp_data_list, complete_function) {
-            let message = $('<p />', {
+            const message = $('<p />', {
                 css: {
                     left: '110%'
                 }
             }).addClass('comment');
             if (IS_SHOW_SYSTEM_COMMENT && type == TYPE_SYSTEM_COMMENT) {
                 message.addClass("system_comment");
+                complete_function();
+                return;
             } else {
                 message.addClass("white_text");
             }
 
-            let provider_elemet = $("<span></span>").addClass("white_provider_text");
+            const provider_elemet = $("<span></span>").addClass("white_provider_text");
             provider_elemet.text(provider);
             if (stamp_data_list && 0 < stamp_data_list.length) {
                 stamp_data_list.sort(function (a, b) {
                     return b.start - a.start;
                 });
-                let comment_element_array = new Array();
-                let image_obj_array = new Array();
-                let image_src_array = new Array();
+                const comment_element_array = new Array();
+                const image_obj_array = new Array();
+                const image_src_array = new Array();
                 jQuery.each(stamp_data_list, function () {
-                    let front = comment.substring(0, this.start);
-                    let back = comment.slice(this.end + 1);
-                    let image_elemet = $("<img/>").addClass("stamp");
+                    const front = comment.substring(0, this.start);
+                    const back = comment.slice(this.end + 1);
+                    const image_elemet = $("<img/>").addClass("stamp");
 
                     image_obj_array.push(image_elemet);
                     image_src_array.push(this.url.replace("https", "http"));
 
                     // image_elemet.css("height","");
-                    let back_element = $("<span></span>").text(back);
+                    const back_element = $("<span></span>").text(back);
                     comment_element_array.unshift(back_element);
                     comment_element_array.unshift(image_elemet);
                     comment = front;
@@ -182,9 +210,9 @@ $(function () {
                 });
                 message.append(provider_elemet);
 
-                let load_count = image_obj_array.length;
-                for (let i = 0; i < image_obj_array.length; i++) {
-                    let image_elemet = image_obj_array[i]
+                var load_count = image_obj_array.length;
+                for (var i = 0; i < image_obj_array.length; i++) {
+                    const image_elemet = image_obj_array[i]
                     image_elemet.bind('load', function () {
                         load_count = load_count - 1;
                         if (load_count == 0) {
@@ -204,49 +232,50 @@ $(function () {
             }
         }
         function workComment(message, complete_function) {
-            let now_time = new Date().getTime();
+            const now_time = new Date().getTime();
             //時刻の設定
             $.data(message, DATA_ADD_TIME_KEY, now_time);
 
-            let comments = message_box.children();
+            const comments = message_box.children();
             if (DISPLAY_COMMENT <= comments.length) {
-                let delete_obj = comment_array.shift();
+                const delete_obj = comment_array.shift();
+
                 if (delete_obj) {
                     delete_obj.hide();
                     delete_obj.remove();
                 }
             }
             message.appendTo(message_box);
+
             // 新規コメントを左に移動
             message.velocity({
                 translateX: ['-109%']
             }, {
-                    duration: calcDuration(now_time),
-                    queue: FIRST_ANIMATION,
-                    complete: complete_function
-                });
+                duration: calcDuration(now_time),
+                queue: FIRST_ANIMATION,
+                complete: complete_function
+            });
 
             if (0 < comment_array.length) {
                 //コメントを上に移動 
-                let move_up = message.outerHeight(true);
-                let count = comment_array.length;
+                const move_up = message.outerHeight(true);
+                var count = comment_array.length;
                 $.each(comment_array,
                     function (index, elem) {
-                        //elem.velocity("finish");
                         elem.velocity({
                             translateY: '-=' + move_up
                         }, {
-                                queue: false,
-                                duration: COMMENT_UP_DURATION,
-                                easing: [0.55, 0.085, 0.68, 0.53],
-                                complete: function (elements) {
-                                    count = count - 1;
-                                    if (count == 0) {
-                                        message.dequeue(FIRST_ANIMATION);
-                                        comment_array.push(message);
-                                    }
+                            queue: false,
+                            duration: COMMENT_UP_DURATION,
+                            easing: [0.55, 0.085, 0.68, 0.53],
+                            complete: function (elements) {
+                                count = count - 1;
+                                if (count == 0) {
+                                    message.dequeue(FIRST_ANIMATION);
+                                    comment_array.push(message);
                                 }
-                            });
+                            }
+                        });
                     }
                 );
             } else {
@@ -269,7 +298,7 @@ $(function () {
         deleteComment(DELETE_COMMENT_TIME);
         init();
 
-        let url = location.href;
+        const url = location.href;
         params = url.split("?");
         if (1 < params.length) {
             mode = params[1].split("&");
@@ -278,14 +307,16 @@ $(function () {
                 IS_DEBUG = true;
             }
         }
-        // if (IS_DEBUG) {
-        //     showTest();
-        // } else {
-        //     // 接続
-        //     open();
-        // }
-        StartComment(addComment);
-        StartReceiveComment();
+        if (IS_DEBUG) {
+            setInterval(function () {
+                init();
+            }, 1000);
+            StartComment(addComment);
+        } else {
+            // 接続
+            StartComment(addComment);
+            StartReceiveComment();
+        }
 
     }
     catch (e) {
