@@ -6,8 +6,7 @@ let comment_listener = null;
 let mcv_url = null;
 // Localアクセスサーバー
 const MCV_WS_URL = "ws://localhost:51021";
-const VERSION = "4.0.0.2";
-
+const VERSION = "4.0.0.3";
 
 function StartReceiveComment(url = MCV_WS_URL) {
     // WebSocket の初期化
@@ -35,12 +34,12 @@ function open() {
 function onOpen(event) {
 }
 
-function pushComment(json){
+function pushComment(json) {
     comment_obj_array.push(json);
 }
 function SendComment() {
     if (0 < comment_obj_array.length) {
-        setTimeout(
+        setZeroTimeout(
             function () {
                 json = comment_obj_array[0];
                 comment_obj_array.shift();
@@ -49,10 +48,7 @@ function SendComment() {
                 }
             }, 0);
     } else {
-        setTimeout(
-            function () {
-                SendComment()
-            }, 100);
+        setTimeout(SendComment, 50);
     }
 }
 // メッセージ受信イベント
@@ -72,3 +68,40 @@ function onClose(event) {
     webSocket = null;
     setTimeout(open(), 100);
 }
+
+
+(function () {
+    var timeouts = [],
+        messageName = 'zero-timeout-message';
+
+    function setZeroTimeoutPostMessage(fn) {
+        timeouts.push(fn);
+        window.postMessage(messageName, '*');
+    }
+
+    function setZeroTimeout(fn) {
+        setTimeout(fn, 0);
+    }
+
+    function handleMessage(event) {
+        if (event.source == window && event.data == messageName) {
+            if (event.stopPropagation) {
+                event.stopPropagation();
+            }
+            if (timeouts.length) {
+                timeouts.shift()();
+            }
+        }
+    }
+
+    if (window.postMessage) {
+        if (window.addEventListener) {
+            window.addEventListener('message', handleMessage, true);
+        } else if (window.attachEvent) {
+            window.attachEvent('onmessage', handleMessage);
+        }
+        window.setZeroTimeout = setZeroTimeoutPostMessage;
+    } else {
+        window.setZeroTimeout = setZeroTimeout;
+    }
+}());
