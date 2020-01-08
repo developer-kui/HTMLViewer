@@ -41,7 +41,7 @@ $(function () {
         //縦アニメーション（下から上）
         const ANIMATION_VERTICAL = 2;//変更不可
         //アニメーションの種類（ANIMATION_HORIZON or ANIMATION_VERTICAL）
-        const COMMENT_ANIMATION = ANIMATION_VERTICAL;
+        const COMMENT_ANIMATION = ANIMATION_HORIZON;
 
         const STAMP_DATA = {
             //Key（左）に置き換え文字
