@@ -1,6 +1,6 @@
 $(function () {
     try {
-        const VERSION = "4.2.0.1";
+        const VERSION = "4.2.1.0";
         /************** 変更可能パラメータ **********/
         // コメントの最大表示数
         const DISPLAY_COMMENT = 3;
@@ -22,24 +22,38 @@ $(function () {
         const IS_SHOW_SYSTEM_COMMENT = true;
         // 投稿者のコメントの表示
         const IS_SHOW_NAME = false;
-
         /* 情報欄(コメントの右側)に表示させる情報のパターン */
         //サービス名(YoubueLiveやOPENRECやTwitch)
         const INFO_SERVICE_NAME = 0;
+        /************************************************/
         //コメント番号(MCVで付与したもの)
-        const INFO_INDEX = 1;
+        const INFO_INDEX = 1;//変更不可
         //配信名(MCVで名前を付けたもの)
-        const INFO_STREAM_NAME = 2;
+        const INFO_STREAM_NAME = 2;//変更不可
         //非表示
-        const NOT_DISPLAY = 3;
+        const NOT_DISPLAY = 3;//変更不可
         //表示させたい情報を上記から選ぶ
         const SHOW_INFO = NOT_DISPLAY;
+        /************************************************/
+        /* コメント登場アニメーション */
+        //横アニメーション（右から左）（Default）
+        const ANIMATION_HORIZON  = 1;//変更不可
+        //縦アニメーション（下から上）
+        const ANIMATION_VERTICAL = 2;//変更不可
+        //アニメーションの種類（ANIMATION_HORIZON or ANIMATION_VERTICAL）
+        const COMMENT_ANIMATION = ANIMATION_VERTICAL;
 
         const STAMP_DATA = {
             //Key（左）に置き換え文字
             //Value（右）に対象の画像URL
             //HTTP経由でもOK
-            // "(^^)/": ["./img/kawaii.png"]
+            // "(^^)/": ["./img/kawaii.png","./img/kawaii2.png"],
+            // "サイコロ": ["./img/サイコロ1.png",
+            //  "./img/サイコロ2.png",
+            //   "./img/サイコロ3.png", 
+            //   "./img/サイコロ4.png", 
+            //   "./img/サイコロ5.png",
+            //    "./img/サイコロ6.png"],
         };
 
         /************************************************/
@@ -51,6 +65,8 @@ $(function () {
 
         const FIRST_ANIMATION = "FIRST_ANIMATION";
         const TYPE_SYSTEM_COMMENT = 1;
+
+        var TEST_COUNT = 1;
 
         // コメント格納用変数
         const message_box = $('#message_box');
@@ -163,11 +179,7 @@ $(function () {
         }
         // コメント追加用関数
         function createComment(name, comment, provider, type, stamp_data_list, complete_function) {
-            const message = $('<p />', {
-                css: {
-                    left: '110%'
-                }
-            }).addClass('comment');
+            const message = $('<p />', {}).addClass('comment');
             if (IS_SHOW_SYSTEM_COMMENT && type == TYPE_SYSTEM_COMMENT) {
                 message.addClass("system_comment");
                 complete_function();
@@ -245,16 +257,37 @@ $(function () {
                     delete_obj.remove();
                 }
             }
-            message.appendTo(message_box);
+            if(COMMENT_ANIMATION == ANIMATION_HORIZON){
+                //画面外に一度表示させる
+                message.css("left",+200+"%");
+                message.appendTo(message_box);
+                //表示させている幅を取得
+                const msWidth = message.outerWidth(true); 
+                //改めて設定
+                message.css("left",msWidth+"px");
+                // 新規コメントを左に移動
+                message.velocity({
+                    translateX: [-msWidth+"px"],
+                }, {
+                    duration: calcDuration(now_time),
+                    queue: FIRST_ANIMATION,
+                    complete: complete_function
+                });
+            }else{
+                message.css("bottom",-200+"%");
+                message.appendTo(message_box);
+                const msHeight = message.outerHeight(true); 
+                message.css("bottom",-msHeight+"px");
+                message.velocity({
+                    translateY: '-=' + msHeight
+                }, {
+                    duration: COMMENT_UP_DURATION,
+                    easing: [0.55, 0.085, 0.68, 0.53],
+                    queue: FIRST_ANIMATION,
+                    complete: complete_function
+                });
+            }
 
-            // 新規コメントを左に移動
-            message.velocity({
-                translateX: ['-109%']
-            }, {
-                duration: calcDuration(now_time),
-                queue: FIRST_ANIMATION,
-                complete: complete_function
-            });
 
             if (0 < comment_array.length) {
                 //コメントを上に移動 
@@ -308,8 +341,13 @@ $(function () {
             }
         }
         if (IS_DEBUG) {
-            setInterval(function () {
-                init();
+            setInterval(function () {                
+                const obj = new Object();
+                obj["user_data"] = { name: "kui", user_id: "" };
+                obj["comment"] = "TEST:" + TEST_COUNT++;
+                const stream_data = { stream_name: "", service_name: "" };
+                obj["stream_data"] = stream_data;
+                pushComment(obj);                
             }, 1000);
             StartComment(addComment);
         } else {
