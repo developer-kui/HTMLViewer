@@ -1,6 +1,6 @@
 $(function () {
     try {
-        const VERSION = "4.2.1.0";
+        const VERSION = "4.2.1.1";
         /************** 変更可能パラメータ **********/
         // コメントの最大表示数
         const DISPLAY_COMMENT = 3;
@@ -41,7 +41,7 @@ $(function () {
         //縦アニメーション（下から上）
         const ANIMATION_VERTICAL = 2;//変更不可
         //アニメーションの種類（ANIMATION_HORIZON or ANIMATION_VERTICAL）
-        const COMMENT_ANIMATION = ANIMATION_HORIZON;
+        const COMMENT_ANIMATION = ANIMATION_VERTICAL;
 
         const STAMP_DATA = {
             //Key（左）に置き換え文字
@@ -79,8 +79,10 @@ $(function () {
         /******************************************/
 
         function deleteElement(elem) {
+            //表示させている幅を取得
+            const msWidth = message.outerWidth(true); 
             elem.velocity("finish").velocity({
-                translateX: ['100%']
+                translateX: [msWidth + 'px']
             }, {
                 duration: DELETE_COMMENT_DURATION,
                 queue: false,
@@ -90,7 +92,7 @@ $(function () {
                         for (var i = 0; i <= delete_array; i++) {
                             comment_array.shift().remove();
                         }
-                    }, DELETE_COMMENT_DURATION);
+                    }, 10);
                 }
             });
         }
