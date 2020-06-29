@@ -1,9 +1,9 @@
 $(function () {
     try {
-        const VERSION = "nico_4.2.1.1";
+        const VERSION = "nico_4.2.2.0";
         /************** 変更可能パラメータ **********/
         // コメントの表示時間：短くなるとコメントの流れる速度も早くなる（ms）
-        const COMMENT_DISPLAY_TIME = 5500;
+        const COMMENT_DISPLAY_TIME = 5.5;
         // Sytem用のコメントです(広告とか放送閉じるとか(ニコ生))
         const IS_SHOW_SYSTEM_COMMENT = true;
         // 投稿者のコメントの表示
@@ -38,7 +38,7 @@ $(function () {
 
         /************************************************/
         //Debugモード
-        const IS_DEBUG = false;
+        var IS_DEBUG = false;
         /************************************************/
         // 時間情報のDataKey
         const FIRST_ANIMATION = "FIRST_ANIMATION";
@@ -103,6 +103,7 @@ $(function () {
             const stamp_data_list = json_data.stamp_data_list;
             createComment(name, comment, provider, type, stamp_data_list, complete_function);
         }
+
         // コメント追加用関数
         function createComment(name, comment, provider, type, stamp_data_list, complete_function) {
             const message = $('<p />', {}).addClass('comment');
@@ -127,6 +128,8 @@ $(function () {
                     const front = comment.substring(0, this.start);
                     const back = comment.slice(this.end + 1);
                     const image_elemet = $("<img/>").addClass("stamp");
+                    //スタンプの高さは文字の高さに合わせる
+                    image_elemet.height(COMMENT_HEIGHT);
 
                     image_obj_array.push(image_elemet);
                     image_src_array.push(this.url.replace("https", "http"));
@@ -171,6 +174,7 @@ $(function () {
         function WorkAddComment(addElement) {
             var line = 0;
             var isAdd = false;
+            const boxWidth = message_box.outerWidth(true);
             for (var i = 0; i < comment_array.length; i++) {
                 const array = comment_array[i];
                 if (0 < array.length) {
@@ -181,10 +185,13 @@ $(function () {
                     if (matchResult && 0 < matchResult.length) {
                         const result = Number(matchResult[0]);
                         const elementWidth = commentElement.outerWidth(true);
+                        const left = commentElement.position().left;
+                        const isAllShow = 0 < boxWidth - left - elementWidth + 10;
                         //コメントが全て表示されているか判定 
-                        if (elementWidth + 5 + result < 0) {
+                        if (isAllShow) {
+                            const addElementWidth = addElement.outerWidth(true);
                             //コメントが追いつかない判定
-                            if (addElement.outerWidth(true) <= commentElement.outerWidth(true) - result) {
+                            if (addElementWidth <= elementWidth + 50) {
                                 array.push(addElement);
                                 isAdd = true;
                                 line = i;
@@ -208,7 +215,7 @@ $(function () {
             return line;
         }
         function workComment(message, complete_function) {
-            var boxWidth = message_box.outerWidth(true);
+            const boxWidth = message_box.outerWidth(true);
             //画面外に一度表示させる
             message.css("left", boxWidth + "px");
             message.appendTo(message_box);
@@ -219,22 +226,19 @@ $(function () {
             }
             const line = WorkAddComment(message);
             message.css("top", COMMENT_HEIGHT * line + "px");
+            // TweenMax.fromTo('#fromTo', 0.5, {left: 200}, {left: 100});
             // 新規コメントを左に移動
-            message.velocity({
-                //200は適当：つけないと最後のアニメーションがおかしくなる
-                translateX: [-(boxWidth + msWidth + 200) + "px"],
-            }, {
-                duration: COMMENT_DISPLAY_TIME,
-                queue: FIRST_ANIMATION,
-                easing: 'linear',
-                complete: function (elements) {
+            TweenMax.to(message, COMMENT_DISPLAY_TIME, {
+                x: -(boxWidth + (msWidth * 2)) + "px",
+                ease: Linear.easeNone,
+                onComplete: function () {
                     const array = comment_array[line];
                     if (0 < array.length) {
-                        array.shift();
+                        array.shift().remove();
                     }
-                    elements[0].remove();
                 }
             });
+
             message.dequeue(FIRST_ANIMATION);
             complete_function();
         }
@@ -269,7 +273,7 @@ $(function () {
                 const stream_data = { stream_name: "", service_name: "" };
                 obj["stream_data"] = stream_data;
                 pushComment(obj);
-            }, 50);
+            }, 200);
             StartComment(addComment);
         } else {
             // 接続

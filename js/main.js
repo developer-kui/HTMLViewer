@@ -1,6 +1,6 @@
 $(function () {
     try {
-        const VERSION = "4.2.1.1";
+        const VERSION = "4.2.2.0";
         /************** 変更可能パラメータ **********/
         // コメントの最大表示数
         const DISPLAY_COMMENT = 3;
@@ -58,7 +58,7 @@ $(function () {
 
         /************************************************/
         //Debugモード
-        const IS_DEBUG = false;
+        var IS_DEBUG = false;
         /************************************************/
         // 時間情報のDataKey
         const DATA_ADD_TIME_KEY = "ADD_TIME_KEY";
@@ -80,7 +80,7 @@ $(function () {
 
         function deleteElement(elem) {
             //表示させている幅を取得
-            const msWidth = message.outerWidth(true); 
+            const msWidth = elem.outerWidth(true); 
             elem.velocity("finish").velocity({
                 translateX: [msWidth + 'px']
             }, {
@@ -350,7 +350,7 @@ $(function () {
                 const stream_data = { stream_name: "", service_name: "" };
                 obj["stream_data"] = stream_data;
                 pushComment(obj);                
-            }, 1000);
+            }, 10000);
             StartComment(addComment);
         } else {
             // 接続
