@@ -1,6 +1,6 @@
 $(function () {
     try {
-        const VERSION = "nico_4.2.2.0";
+        const VERSION = "nico_4.2.3.0";
         /************** 変更可能パラメータ **********/
         // コメントの表示時間：短くなるとコメントの流れる速度も早くなる（ms）
         const COMMENT_DISPLAY_TIME = 5.5;
@@ -50,6 +50,13 @@ $(function () {
         // コメント格納用配列
         const comment_array = new Array();
         /******************************************/
+        const transitionEndEvents = [
+            "webkitTransitionEnd",
+            "mozTransitionEnd",
+            "oTransitionEnd",
+            "transitionend"
+        ];
+        const transitionEnd = transitionEndEvents.join(" ");
 
         function workCustomStamp(json_data) {
             for (key in STAMP_DATA) {
@@ -183,7 +190,6 @@ $(function () {
                     const matchResult = webkitTransform.match(TranslateXRegex);
                     //Animationが始まってない場合はwebkitTransform null
                     if (matchResult && 0 < matchResult.length) {
-                        const result = Number(matchResult[0]);
                         const elementWidth = commentElement.outerWidth(true);
                         const left = commentElement.position().left;
                         const isAllShow = 0 < boxWidth - left - elementWidth + 10;
@@ -226,25 +232,22 @@ $(function () {
             }
             const line = WorkAddComment(message);
             message.css("top", COMMENT_HEIGHT * line + "px");
-            // TweenMax.fromTo('#fromTo', 0.5, {left: 200}, {left: 100});
-            // 新規コメントを左に移動
-            TweenMax.to(message, COMMENT_DISPLAY_TIME, {
-                x: -(boxWidth + (msWidth * 2)) + "px",
-                ease: Linear.easeNone,
-                onComplete: function () {
-                    const array = comment_array[line];
-                    if (0 < array.length) {
-                        array.shift().remove();
-                    }
+            message.css('transition', 'transform 5s');
+            message.css('transition-timing-function', 'linear');
+            // message.css('will-change', 'transform');
+            message.css('transform', 'translateX(-' + (boxWidth + msWidth) + 'px)');
+
+            message.on(transitionEnd, function() {
+                const array = comment_array[line];
+                if (0 < array.length) {
+                    array.shift().remove();
                 }
             });
-
             message.dequeue(FIRST_ANIMATION);
             complete_function();
         }
 
         // コメント追加用関数
-
         function init() {
             const obj = new Object();
             obj["user_data"] = { name: "kui", user_id: "" };
@@ -273,14 +276,13 @@ $(function () {
                 const stream_data = { stream_name: "", service_name: "" };
                 obj["stream_data"] = stream_data;
                 pushComment(obj);
-            }, 200);
+            }, 50);
             StartComment(addComment);
         } else {
             // 接続
             StartComment(addComment);
             StartReceiveComment();
         }
-
     }
     catch (e) {
         alert(e);
