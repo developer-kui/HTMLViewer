@@ -1,27 +1,11 @@
 $(function () {
     try {
-        const VERSION = "nico_4.2.3.0";
+        const VERSION = "nico_4.3.0.0";
         /************** 変更可能パラメータ **********/
-        // コメントの表示時間：短くなるとコメントの流れる速度も早くなる（ms）
-        const COMMENT_DISPLAY_TIME = 5.5;
         // Sytem用のコメントです(広告とか放送閉じるとか(ニコ生))
         const IS_SHOW_SYSTEM_COMMENT = true;
         // 投稿者のコメントの表示
         const IS_SHOW_NAME = false;
-        /* 情報欄(コメントの右側)に表示させる情報のパターン */
-        //サービス名(YoubueLiveやOPENRECやTwitch)
-        const INFO_SERVICE_NAME = 0;
-        /************************************************/
-        //コメント番号(MCVで付与したもの)
-        const INFO_INDEX = 1;//変更不可
-        //配信名(MCVで名前を付けたもの)
-        const INFO_STREAM_NAME = 2;//変更不可
-        //非表示
-        const NOT_DISPLAY = 3;//変更不可
-        //表示させたい情報を上記から選ぶ
-        const SHOW_INFO = NOT_DISPLAY;
-        /************************************************/
-        const TranslateXRegex = new RegExp(/[+-]?(?:\d+\.?\d*|\.\d+)/u);
 
         const STAMP_DATA = {
             //Key（左）に置き換え文字
@@ -42,7 +26,8 @@ $(function () {
         /************************************************/
         // 時間情報のDataKey
         const FIRST_ANIMATION = "FIRST_ANIMATION";
-        const TYPE_SYSTEM_COMMENT = 1;
+        const TYPE_SYSTEM_COMMENT = "System";
+        const TYPE_SERVICE_COMMENT = "Service";
         var TEST_COUNT = 1;
         // コメント格納用変数
         const message_box = $('#message_box');
@@ -57,6 +42,7 @@ $(function () {
             "transitionend"
         ];
         const transitionEnd = transitionEndEvents.join(" ");
+        const boxWidth = message_box.outerWidth(true);
 
         function workCustomStamp(json_data) {
             for (key in STAMP_DATA) {
@@ -86,44 +72,30 @@ $(function () {
         }
         function addComment(json_data, complete_function) {
             workCustomStamp(json_data);
-            const name = json_data.user_data.name;
-            var comment = json_data.comment;
+            var comment = json_data.html_comment;
+            if (comment == null || 0 == comment.length) {
+                comment = json_data.comment;
+            }
             if (comment == null || 0 == comment.length) {
                 comment = "　";
             }
-            var provider = "";
-            switch (SHOW_INFO) {
-                case INFO_INDEX:
-                    provider = json_data.index;
-                    break;
-                case INFO_STREAM_NAME:
-                    provider = json_data.stream_data.stream_name;
-                    break;
-                case INFO_SERVICE_NAME:
-                    provider = json_data.stream_data.service_name;
-                    break;
-                case NOT_DISPLAY:
-                default:
-                    break;
-            }
-            const type = json_data.type;
-            const stamp_data_list = json_data.stamp_data_list;
-            createComment(name, comment, provider, type, stamp_data_list, complete_function);
+
+            createComment(json_data.user_data.name, comment, json_data.type,json_data.tier, json_data.stamp_data_list, complete_function);
         }
 
         // コメント追加用関数
-        function createComment(name, comment, provider, type, stamp_data_list, complete_function) {
-            const message = $('<p />', {}).addClass('comment');
+        function createComment(name, comment, type, tier, stamp_data_list, complete_function) {
+            const message = $('<p />', {}).addClass('comment')
             if (IS_SHOW_SYSTEM_COMMENT && type == TYPE_SYSTEM_COMMENT) {
                 message.addClass("system_comment");
                 complete_function();
                 return;
+            } else if(0 < tier) {
+                message.addClass("rainbowText");
             } else {
                 message.addClass("white_text");
             }
 
-            const provider_elemet = $("<span></span>").addClass("white_provider_text");
-            provider_elemet.text(provider);
             if (stamp_data_list && 0 < stamp_data_list.length) {
                 stamp_data_list.sort(function (a, b) {
                     return b.start - a.start;
@@ -155,7 +127,6 @@ $(function () {
                 jQuery.each(comment_element_array, function () {
                     message.append(this);
                 });
-                message.append(provider_elemet);
 
                 var load_count = image_obj_array.length;
                 for (var i = 0; i < image_obj_array.length; i++) {
@@ -174,35 +145,29 @@ $(function () {
                 } else {
                     message.text(comment);
                 }
-                message.append(provider_elemet);
                 workComment(message, complete_function);
             }
         }
         function WorkAddComment(addElement) {
             var line = 0;
             var isAdd = false;
-            const boxWidth = message_box.outerWidth(true);
             for (var i = 0; i < comment_array.length; i++) {
                 const array = comment_array[i];
                 if (0 < array.length) {
                     const commentElement = array[array.length - 1];
-                    const webkitTransform = commentElement[0].style.webkitTransform;
-                    const matchResult = webkitTransform.match(TranslateXRegex);
-                    //Animationが始まってない場合はwebkitTransform null
-                    if (matchResult && 0 < matchResult.length) {
-                        const elementWidth = commentElement.outerWidth(true);
-                        const left = commentElement.position().left;
-                        const isAllShow = 0 < boxWidth - left - elementWidth + 10;
-                        //コメントが全て表示されているか判定 
-                        if (isAllShow) {
-                            const addElementWidth = addElement.outerWidth(true);
-                            //コメントが追いつかない判定
-                            if (addElementWidth <= elementWidth + 50) {
-                                array.push(addElement);
-                                isAdd = true;
-                                line = i;
-                                break;
-                            }
+                    const elementWidth = commentElement.data('cashWidth');
+                    
+                    const left = commentElement.position().left;
+                    const isAllShow = 0 < boxWidth - left - elementWidth + 10;
+                    //コメントが全て表示されているか判定 
+                    if (isAllShow) {
+                        const addElementWidth = addElement.data('cashWidth');
+                        //コメントが追いつかない判定
+                        if (addElementWidth <= elementWidth + 40) {
+                            array.push(addElement);
+                            isAdd = true;
+                            line = i;
+                            break;
                         }
                     }
                 } else {
@@ -220,22 +185,25 @@ $(function () {
             }
             return line;
         }
+        
         function workComment(message, complete_function) {
-            const boxWidth = message_box.outerWidth(true);
             //画面外に一度表示させる
             message.css("left", boxWidth + "px");
             message.appendTo(message_box);
-            //表示させている幅を取得
+            //表示させている幅を取得(ちょっと重い)
             const msWidth = message.outerWidth(true);
             if (COMMENT_HEIGHT == 0) {
                 COMMENT_HEIGHT = message.outerHeight(true);
             }
+            //幅の取得はコストが高いのでキャッシュしておく
+            message.data('cashWidth', msWidth);
             const line = WorkAddComment(message);
-            message.css("top", COMMENT_HEIGHT * line + "px");
-            message.css('transition', 'transform 5s');
-            message.css('transition-timing-function', 'linear');
-            // message.css('will-change', 'transform');
-            message.css('transform', 'translateX(-' + (boxWidth + msWidth) + 'px)');
+            message.css({
+                "top":COMMENT_HEIGHT * line + "px",
+                'transition':'transform 5s',
+                'transition-timing-function':'linear',
+                'transform':'translateX(-' + (boxWidth + msWidth) + 'px)'
+            });
 
             message.on(transitionEnd, function() {
                 const array = comment_array[line];
@@ -251,7 +219,7 @@ $(function () {
         function init() {
             const obj = new Object();
             obj["user_data"] = { name: "kui", user_id: "" };
-            obj["comment"] = "Hello　MCV(^^)/" + VERSION;
+            obj["comment"] = "Hello　MCV(^∇^)/b" + VERSION;
             const stream_data = { stream_name: "", service_name: "" };
             obj["stream_data"] = stream_data;
             pushComment(obj);
@@ -275,8 +243,29 @@ $(function () {
                 obj["comment"] = "TEST:" + TEST_COUNT++;
                 const stream_data = { stream_name: "", service_name: "" };
                 obj["stream_data"] = stream_data;
+                obj["stamp_data_list"]=[{
+                    start:0,
+                    end:1,
+                    url:"https://vpic.mildom.com/download/file/jp/mildom/imgs/fa0f22e951d4ca36d016e14b12d7e79b.png",
+                    width:50,
+                    height:50,
+                },{
+                    start:3,
+                    end:4,
+                    url:"https://vpic.mildom.com/download/file/jp/mildom/nnfans/476cf3706758272cba1d597a24515dc7.png",
+                    width:50,
+                    height:50,
+                },{
+                    start:8,
+                    end:9,
+                    url:"https://vpic.mildom.com/download/file/jp/mildom/imgs/87e483cad9c6f75b4c8c4ac6d8965ee8.png",
+                    width:50,
+                    height:50,
+                }
+            ]
+
                 pushComment(obj);
-            }, 50);
+            }, 100);
             StartComment(addComment);
         } else {
             // 接続

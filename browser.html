@@ -12,7 +12,11 @@
     <script type="text/javascript" src="./js/velocity.min.js"></script>
     <script type="text/javascript" src="./js/mcv_client.js"></script>
     <script type="text/javascript" src="./js/main.js"></script>
-
+    <script type="text/javascript">
+        if(typeof window.external.SetLocalProperty !== "undefined"){
+            window.external.SetLocalProperty("prop:Browser60fps","1");  
+        }
+    </script>
     <link type="text/css" rel="stylesheet" href="./css/jquery-ui.min.css" />
     <link type="text/css" rel="stylesheet" href="./css/rainbow_animation.css" />
     <link type="text/css" rel="stylesheet" href="./css/comment.css" />

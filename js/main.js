@@ -1,6 +1,6 @@
 $(function () {
     try {
-        const VERSION = "4.2.2.0";
+        const VERSION = "4.3.0.0";
         /************** 変更可能パラメータ **********/
         // コメントの最大表示数
         const DISPLAY_COMMENT = 3;
@@ -64,7 +64,8 @@ $(function () {
         const DATA_ADD_TIME_KEY = "ADD_TIME_KEY";
 
         const FIRST_ANIMATION = "FIRST_ANIMATION";
-        const TYPE_SYSTEM_COMMENT = 1;
+        const TYPE_SYSTEM_COMMENT = "System";
+        const TYPE_SERVICE_COMMENT = "Service";
 
         var TEST_COUNT = 1;
 
@@ -155,8 +156,10 @@ $(function () {
         }
         function addComment(json_data, complete_function) {
             workCustomStamp(json_data);
-            const name = json_data.user_data.name;
             var comment = json_data.comment;
+            if (comment == null || 0 == comment.length) {
+                comment = json_data.comment;
+            }
             if (comment == null || 0 == comment.length) {
                 comment = "　";
             }
@@ -175,17 +178,17 @@ $(function () {
                 default:
                     break;
             }
-            const type = json_data.type;
-            const stamp_data_list = json_data.stamp_data_list;
-            createComment(name, comment, provider, type, stamp_data_list, complete_function);
+            createComment(json_data.user_data.name, comment, provider, json_data.type,json_data.tier, json_data.stamp_data_list, complete_function);
         }
         // コメント追加用関数
-        function createComment(name, comment, provider, type, stamp_data_list, complete_function) {
+        function createComment(name, comment, provider, type, tier, stamp_data_list, complete_function) {
             const message = $('<p />', {}).addClass('comment');
-            if (IS_SHOW_SYSTEM_COMMENT && type == TYPE_SYSTEM_COMMENT) {
+            if (IS_SHOW_SYSTEM_COMMENT && type === TYPE_SYSTEM_COMMENT) {
                 message.addClass("system_comment");
                 complete_function();
                 return;
+            } else if(0 < tier) {
+                message.addClass("rainbowText");
             } else {
                 message.addClass("white_text");
             }
@@ -293,7 +296,7 @@ $(function () {
 
             if (0 < comment_array.length) {
                 //コメントを上に移動 
-                const move_up = message.outerHeight(true);
+                const move_up = message.outerHeight();
                 var count = comment_array.length;
                 $.each(comment_array,
                     function (index, elem) {
@@ -324,7 +327,7 @@ $(function () {
         function init() {
             const obj = new Object();
             obj["user_data"] = { name: "kui", user_id: "" };
-            obj["comment"] = "Hello　MCV(^^)/" + VERSION;
+            obj["comment"] = "Hello　MCV(^∇^)/" + VERSION;
             const stream_data = { stream_name: "", service_name: "" };
             obj["stream_data"] = stream_data;
             pushComment(obj);
@@ -343,14 +346,35 @@ $(function () {
             }
         }
         if (IS_DEBUG) {
-            setInterval(function () {                
+            setInterval(function () {
                 const obj = new Object();
                 obj["user_data"] = { name: "kui", user_id: "" };
                 obj["comment"] = "TEST:" + TEST_COUNT++;
                 const stream_data = { stream_name: "", service_name: "" };
                 obj["stream_data"] = stream_data;
-                pushComment(obj);                
-            }, 10000);
+                obj["stamp_data_list"]=[{
+                    start:0,
+                    end:1,
+                    url:"https://vpic.mildom.com/download/file/jp/mildom/imgs/fa0f22e951d4ca36d016e14b12d7e79b.png",
+                    width:50,
+                    height:50,
+                },{
+                    start:3,
+                    end:4,
+                    url:"https://vpic.mildom.com/download/file/jp/mildom/nnfans/476cf3706758272cba1d597a24515dc7.png",
+                    width:50,
+                    height:50,
+                },{
+                    start:8,
+                    end:9,
+                    url:"https://vpic.mildom.com/download/file/jp/mildom/imgs/87e483cad9c6f75b4c8c4ac6d8965ee8.png",
+                    width:50,
+                    height:50,
+                }
+            ]
+
+                pushComment(obj);
+            }, 100);
             StartComment(addComment);
         } else {
             // 接続
