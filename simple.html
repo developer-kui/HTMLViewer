@@ -24,7 +24,11 @@
             $('head script:last').after(script);
         });
     </script>
-
+    <script type="text/javascript">
+        if(typeof window.external.SetLocalProperty !== "undefined"){
+            window.external.SetLocalProperty("prop:Browser60fps","1");  
+        }
+    </script>
     <link type="text/css" rel="stylesheet" href="./css/jquery-ui.min.css" />
     <link type="text/css" rel="stylesheet" href="./css/rainbow_animation.css" />
     <!--OBSのキャッシュ無効化対応-->
