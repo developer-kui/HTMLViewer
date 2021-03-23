@@ -1,6 +1,7 @@
 $(function () {
     try {
-        const VERSION = "nico_4.3.0.0";
+        //2021/03/23 Update
+        const VERSION = "nico_4.3.0.1";
         /************** 変更可能パラメータ **********/
         // Sytem用のコメントです(広告とか放送閉じるとか(ニコ生))
         const IS_SHOW_SYSTEM_COMMENT = true;
@@ -73,10 +74,10 @@ $(function () {
         function addComment(json_data, complete_function) {
             workCustomStamp(json_data);
             var comment = json_data.html_comment;
-            if (comment == null || 0 == comment.length) {
+            if (!comment || 0 === comment.length) {
                 comment = json_data.comment;
             }
-            if (comment == null || 0 == comment.length) {
+            if (!comment || 0 === comment.length) {
                 comment = "　";
             }
 
@@ -219,7 +220,7 @@ $(function () {
         function init() {
             const obj = new Object();
             obj["user_data"] = { name: "kui", user_id: "" };
-            obj["comment"] = "Hello　MCV(^∇^)/b" + VERSION;
+            obj["comment"] = "Hello　MCV(^∇^)/ " + VERSION;
             const stream_data = { stream_name: "", service_name: "" };
             obj["stream_data"] = stream_data;
             pushComment(obj);
