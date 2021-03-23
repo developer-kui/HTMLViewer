@@ -1,6 +1,7 @@
 $(function () {
     try {
-        const VERSION = "4.3.0.0";
+        //2021/03/23 Update
+        const VERSION = "4.3.0.1";
         /************** 変更可能パラメータ **********/
         // コメントの最大表示数
         const DISPLAY_COMMENT = 3;
@@ -156,11 +157,11 @@ $(function () {
         }
         function addComment(json_data, complete_function) {
             workCustomStamp(json_data);
-            var comment = json_data.comment;
-            if (comment == null || 0 == comment.length) {
+            var comment = json_data.html_comment;
+            if (!comment || 0 === comment.length) {
                 comment = json_data.comment;
             }
-            if (comment == null || 0 == comment.length) {
+            if (!comment || 0 === comment.length) {
                 comment = "　";
             }
             var provider = "";
@@ -323,11 +324,10 @@ $(function () {
         }
 
         // コメント追加用関数
-
         function init() {
             const obj = new Object();
             obj["user_data"] = { name: "kui", user_id: "" };
-            obj["comment"] = "Hello　MCV(^∇^)/" + VERSION;
+            obj["comment"] = "Hello　MCV(^∇^)/ " + VERSION;
             const stream_data = { stream_name: "", service_name: "" };
             obj["stream_data"] = stream_data;
             pushComment(obj);
