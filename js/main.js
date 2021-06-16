@@ -1,7 +1,7 @@
 $(function () {
     // try {
         //2021/03/23 Update
-        const VERSION = "nico_4.3.0.1";
+        const VERSION = "nico_5.0.0.1";
         /************** 変更可能パラメータ **********/
         // Sytem用のコメントです(広告とか放送閉じるとか(ニコ生))
         const IS_SHOW_SYSTEM_COMMENT = true;
@@ -15,6 +15,56 @@ $(function () {
         const TYPE_SERVICE_COMMENT = "Service";
         var TEST_COUNT = 1;
         /******************************************/
+
+        const STAMP_DATA = {
+            //Key（左）に置き換え文字
+            //Value（右）に対象の画像URL
+            //HTTP経由でもOK
+            "いちほ": ["https://develop-kui.com/mcv/img/ichiho.png"],
+            "カク": ["https://develop-kui.com/mcv/img/kaku1.png",
+            "https://develop-kui.com/mcv/img/kaku2.png"],
+            "かく": ["https://develop-kui.com/mcv/img/kaku1.png",
+            "https://develop-kui.com/mcv/img/kaku2.png"],
+            "きぅ": ["https://develop-kui.com/mcv/img/kiu1.jpg",
+            "https://develop-kui.com/mcv/img/kiu2.jpg",
+            "https://develop-kui.com/mcv/img/kiu3.png"],
+            // "サイコロ": ["./img/サイコロ1.png",
+            //  "./img/サイコロ2.png",
+            //   "./img/サイコロ3.png", 
+            //   "./img/サイコロ4.png", 
+            //   "./img/サイコロ5.png",
+            //    "./img/サイコロ6.png"],
+        };
+        function getRandomInt(max) {
+            return Math.floor(Math.random() * (max + 1));
+          }
+        function workCustomStamp(json_data) {
+            for (key in STAMP_DATA) {
+                var start_index = 0;
+                var search_index = 0;
+                while (0 <= search_index) {
+                    search_index = json_data.comment.indexOf(key, start_index)
+                    if (0 <= search_index) {
+                        var image_obj = new Object();
+                        image_obj["start"] = search_index;
+                        image_obj["end"] = search_index + key.length - 1;
+                        const values = STAMP_DATA[key];
+                        var index = 0;
+                        if (1 < values.length) {
+                            index = getRandomInt(values.length - 1);
+                        }
+                        image_obj["url"] = values[index];
+                        start_index = image_obj["end"];
+                        if (json_data.stamp_data_list == null) {
+                            json_data.stamp_data_list = new Array();
+                        }
+                        json_data.stamp_data_list.push(image_obj);
+                    }
+
+                }
+            }
+        }
+
         let ImageMap = new Map()
         class Comment {
             constructor(x) {
@@ -164,10 +214,10 @@ $(function () {
             }
 
 
-            ctx.strokeText(fps, 0, 0);
-            ctx.fillText(fps, 0, 0);
+            // ctx.strokeText(fps, 0, 0);
+            // ctx.fillText(fps, 0, 0);
 
-            ctx.fillText(boxWidth, 0, 400);
+            // ctx.fillText(boxWidth, 0, 400);
             // ctx.fillText(mesure.fontBoundingBoxAscent , 0, 500);
             // ctx.fillText(mesure.actualBoundingBoxAscent , 0, 600);
             // ctx.fillText(x, 0, 500);
@@ -207,7 +257,7 @@ $(function () {
 
 
         function addComment(json_data, complete_function) {
-            // workCustomStamp(json_data);
+            workCustomStamp(json_data);
             var comment = json_data.html_comment;
             if (!comment || 0 === comment.length) {
                 comment = json_data.comment;
@@ -237,8 +287,8 @@ $(function () {
                     return b.start - a.start;
                 });
                 let imageUrlList = [];
-                jQuery.each(stamp_data_list, function () {
-                    let url = this.url.replace("https", "http");
+                jQuery.each(stamp_data_list, function (index, stamp_data) {
+                    let url = stamp_data.url.replace("https", "http");
                     let front = text.substring(0, this.start);
                     let back = text.slice(this.end + 1);
 
@@ -319,29 +369,29 @@ $(function () {
             setInterval(function () {
                 const obj = new Object();
                 obj["user_data"] = { name: "kui", user_id: "" };
-                obj["comment"] = "TEST:" + TEST_COUNT++;
+                obj["comment"] = "カクTEST:" + TEST_COUNT++;
                 const stream_data = { stream_name: "", service_name: "" };
                 obj["stream_data"] = stream_data;
-                obj["stamp_data_list"] = [{
-                    start: 0,
-                    end: 1,
-                    url: "https://vpic.mildom.com/download/file/jp/mildom/imgs/fa0f22e951d4ca36d016e14b12d7e79b.png",
-                    width: 50,
-                    height: 50,
-                }, {
-                    start: 3,
-                    end: 4,
-                    url: "https://vpic.mildom.com/download/file/jp/mildom/nnfans/476cf3706758272cba1d597a24515dc7.png",
-                    width: 50,
-                    height: 50,
-                }, {
-                    start: 8,
-                    end: 9,
-                    url: "https://vpic.mildom.com/download/file/jp/mildom/imgs/87e483cad9c6f75b4c8c4ac6d8965ee8.png",
-                    width: 50,
-                    height: 50,
-                }
-                ]
+                // obj["stamp_data_list"] = [{
+                //     start: 0,
+                //     end: 1,
+                //     url: "https://vpic.mildom.com/download/file/jp/mildom/imgs/fa0f22e951d4ca36d016e14b12d7e79b.png",
+                //     width: 50,
+                //     height: 50,
+                // }, {
+                //     start: 3,
+                //     end: 4,
+                //     url: "https://vpic.mildom.com/download/file/jp/mildom/nnfans/476cf3706758272cba1d597a24515dc7.png",
+                //     width: 50,
+                //     height: 50,
+                // }, {
+                //     start: 8,
+                //     end: 9,
+                //     url: "https://vpic.mildom.com/download/file/jp/mildom/imgs/87e483cad9c6f75b4c8c4ac6d8965ee8.png",
+                //     width: 50,
+                //     height: 50,
+                // }
+                // ]
 
                 pushComment(obj);
             }, 20);

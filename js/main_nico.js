@@ -44,7 +44,9 @@ $(function () {
         ];
         const transitionEnd = transitionEndEvents.join(" ");
         const boxWidth = message_box.outerWidth(true);
-
+        function getRandomInt(max) {
+            return Math.floor(Math.random() * (max + 1));
+          }
         function workCustomStamp(json_data) {
             for (key in STAMP_DATA) {
                 var start_index = 0;
