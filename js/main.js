@@ -27,6 +27,7 @@ $(function () {
         strokeThickness: 6
     });
     const COMMENT_HEIGHT = PIXI.TextMetrics.measureText("■", style).height + LINE_SPACING;
+    PIXI.settings.RENDER_OPTIONS.legacy = true;
 
     // // try {
     // //2021/03/23 Update
@@ -49,14 +50,14 @@ $(function () {
         //Key（左）に置き換え文字
         //Value（右）に対象の画像URL
         //HTTP経由でもOK
-        "いちほ": ["https://develop-kui.com/mcv/img/ichiho.png"],
-        "カク": ["https://develop-kui.com/mcv/img/kaku1.png",
-            "https://develop-kui.com/mcv/img/kaku2.png"],
-        "かく": ["https://develop-kui.com/mcv/img/kaku1.png",
-            "https://develop-kui.com/mcv/img/kaku2.png"],
-        "きぅ": ["https://develop-kui.com/mcv/img/kiu1.jpg",
-            "https://develop-kui.com/mcv/img/kiu2.jpg",
-            "https://develop-kui.com/mcv/img/kiu3.png"],
+        // "いちほ": ["https://develop-kui.com/mcv/img/ichiho.png"],
+        // "カク": ["https://develop-kui.com/mcv/img/kaku1.png",
+        //     "https://develop-kui.com/mcv/img/kaku2.png"],
+        // "かく": ["https://develop-kui.com/mcv/img/kaku1.png",
+        //     "https://develop-kui.com/mcv/img/kaku2.png"],
+        // "きぅ": ["https://develop-kui.com/mcv/img/kiu1.jpg",
+        //     "https://develop-kui.com/mcv/img/kiu2.jpg",
+        //     "https://develop-kui.com/mcv/img/kiu3.png"],
         // "サイコロ": ["./img/サイコロ1.png",
         //  "./img/サイコロ2.png",
         //   "./img/サイコロ3.png", 
@@ -327,7 +328,8 @@ $(function () {
             // useContextAlpha:true,
             backgroundAlpha: 0,
             transparent: true,
-            // resolution: 1
+            // resolution: 1,
+            powerPreference:"high-performance"
         });
 
 
@@ -362,23 +364,29 @@ $(function () {
         setInterval(function () {
             const obj = new Object();
             obj["user_data"] = { name: "kui", user_id: "" };
-            obj["comment"] = "今日の天気は晴れ:" + TEST_COUNT++;
+            obj["comment"] = "TEST:" + TEST_COUNT++;
             const stream_data = { stream_name: "", service_name: "" };
             obj["stream_data"] = stream_data;
-            obj["stamp_data_list"] = [{
-                start: 0,
-                end: 1,
-                url: "https://vpic.mildom.com/download/file/jp/mildom/imgs/fa0f22e951d4ca36d016e14b12d7e79b.png",
-                width: 50,
-                height: 50,
-            }, {
-                start: 3,
-                end: 4,
-                url: "https://vpic.mildom.com/download/file/jp/mildom/nnfans/476cf3706758272cba1d597a24515dc7.png",
-                width: 50,
-                height: 50,
+            obj["stamp_data_list"]=[{
+                start:0,
+                end:1,
+                url:"https://vpic.mildom.com/download/file/jp/mildom/imgs/fa0f22e951d4ca36d016e14b12d7e79b.png",
+                width:50,
+                height:50,
+            },{
+                start:3,
+                end:4,
+                url:"https://vpic.mildom.com/download/file/jp/mildom/nnfans/476cf3706758272cba1d597a24515dc7.png",
+                width:50,
+                height:50,
+            },{
+                start:8,
+                end:9,
+                url:"https://vpic.mildom.com/download/file/jp/mildom/imgs/87e483cad9c6f75b4c8c4ac6d8965ee8.png",
+                width:50,
+                height:50,
             }
-            ]
+        ]
 
             pushComment(obj);
         }, 100);
