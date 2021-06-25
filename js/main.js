@@ -38,7 +38,7 @@ $(function () {
 
     /************************************************/
     //Debugモード
-    var IS_DEBUG = false;
+    var IS_DEBUG = true;
     /************************************************/
     // 時間情報のDataKey
     const TYPE_SYSTEM_COMMENT = "System";
@@ -116,13 +116,29 @@ $(function () {
             this.stepCount = Math.round((this.x + this.width) / STEP_COE);
         }
     }
+    const PIXITextRingBufferSize = 100;
+    const PIXITextRingBuffer = new Array();
+    for(var i = 0;i < PIXITextRingBufferSize;i++){
+        PIXITextRingBuffer.push(new PIXI.Text("", style));
+    }
+    var PIXITextRingBufferCount = 0;
+    
+    function GetText(){
+        var textObj = PIXITextRingBuffer[PIXITextRingBufferCount];
+        PIXITextRingBufferCount++;
+        if(PIXITextRingBufferSize <= PIXITextRingBufferCount){
+            PIXITextRingBufferCount = 0;
+        }
+        return textObj;
+    }
     const TYPE_TEXT = 0;
     const TYPE_IMAGE = 1;
     class Token {
         constructor(type, value) {
 
             if (type == TYPE_TEXT) {
-                this.obj = new PIXI.Text(value, style);
+                this.obj = GetText();
+                this.obj.text = value;
             } else {
                 this.obj = null;
             }
