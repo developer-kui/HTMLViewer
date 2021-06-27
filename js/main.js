@@ -12,6 +12,7 @@ $(function () {
     const TOKEN_SPACE = 5;
     const boxWidth = window.innerWidth;//1920
     const boxHeight = window.innerHeight;//1920
+    const PIXITextRingBufferSize = 100;
 
     const url = location.href;
     const ticker = PIXI.Ticker.shared;
@@ -29,9 +30,7 @@ $(function () {
     const COMMENT_HEIGHT = PIXI.TextMetrics.measureText("■", style).height + LINE_SPACING;
     PIXI.settings.RENDER_OPTIONS.legacy = true;
 
-    // // try {
-    // //2021/03/23 Update
-    const VERSION = "nico_5.0.0.2";
+    const VERSION = "nico_5.0.0.3";
     /************** 変更可能パラメータ **********/
     // Sytem用のコメントです(広告とか放送閉じるとか(ニコ生))
     const IS_SHOW_SYSTEM_COMMENT = true;
@@ -116,7 +115,6 @@ $(function () {
             this.stepCount = Math.round((this.x + this.width) / STEP_COE);
         }
     }
-    const PIXITextRingBufferSize = 100;
     const PIXITextRingBuffer = new Array();
     for(var i = 0;i < PIXITextRingBufferSize;i++){
         PIXITextRingBuffer.push(new PIXI.Text("", style));
@@ -124,7 +122,7 @@ $(function () {
     var PIXITextRingBufferCount = 0;
     
     function GetText(){
-        var textObj = PIXITextRingBuffer[PIXITextRingBufferCount];
+        const textObj = PIXITextRingBuffer[PIXITextRingBufferCount];
         PIXITextRingBufferCount++;
         if(PIXITextRingBufferSize <= PIXITextRingBufferCount){
             PIXITextRingBufferCount = 0;
@@ -182,16 +180,15 @@ $(function () {
     function WorkAddComment(addComment) {
         var isAdd = false;
         for (var i = 0; i < TokenListLine.length; i++) {
-            let tokenList = TokenListLine[i];
+            const tokenList = TokenListLine[i];
             if (0 < tokenList.length) {
-                let showToken = tokenList[tokenList.length - 1];
-                let showTokenWidth = showToken.width;
-                let x = showToken.x;
-                //コメントが全て表示されているか判定 
-                if (0 < boxWidth - (x + showTokenWidth + 10)) {
-                    let addTokenWidth = addComment.width;
-                    //コメントが追いつかない判定
-                    if (addTokenWidth <= showTokenWidth + 40) {
+                const showComment = tokenList[tokenList.length - 1];
+                //コメントがすべて表示されているかチェック(マージン)
+                if(showComment.x + showComment.width < boxWidth + 20){
+                    const showCommentRight = showComment.width + showComment.x - (showComment.stepCount * FPS * 4);
+                    const addComment_after4sec_x = addComment.x - (addComment.stepCount * FPS * 4);//4秒
+                    //4秒後にコメントが追いつかないか判定
+                    if (showCommentRight < addComment_after4sec_x) {
                         tokenList.push(addComment);
                         addComment.y = i * COMMENT_HEIGHT;
                         isAdd = true;
@@ -380,29 +377,34 @@ $(function () {
         setInterval(function () {
             const obj = new Object();
             obj["user_data"] = { name: "kui", user_id: "" };
-            obj["comment"] = "TEST:" + TEST_COUNT++;
+            var comment = "TEST:" + TEST_COUNT++;
+            const length = getRandomInt(10);
+            for(var i = 0;i < length;i++){
+                comment = comment + "★";
+            }
+            obj["comment"] = comment;
             const stream_data = { stream_name: "", service_name: "" };
             obj["stream_data"] = stream_data;
-            obj["stamp_data_list"]=[{
-                start:0,
-                end:1,
-                url:"https://vpic.mildom.com/download/file/jp/mildom/imgs/fa0f22e951d4ca36d016e14b12d7e79b.png",
-                width:50,
-                height:50,
-            },{
-                start:3,
-                end:4,
-                url:"https://vpic.mildom.com/download/file/jp/mildom/nnfans/476cf3706758272cba1d597a24515dc7.png",
-                width:50,
-                height:50,
-            },{
-                start:8,
-                end:9,
-                url:"https://vpic.mildom.com/download/file/jp/mildom/imgs/87e483cad9c6f75b4c8c4ac6d8965ee8.png",
-                width:50,
-                height:50,
-            }
-        ]
+        //     obj["stamp_data_list"]=[{
+        //         start:0,
+        //         end:1,
+        //         url:"https://vpic.mildom.com/download/file/jp/mildom/imgs/fa0f22e951d4ca36d016e14b12d7e79b.png",
+        //         width:50,
+        //         height:50,
+        //     },{
+        //         start:3,
+        //         end:4,
+        //         url:"https://vpic.mildom.com/download/file/jp/mildom/nnfans/476cf3706758272cba1d597a24515dc7.png",
+        //         width:50,
+        //         height:50,
+        //     },{
+        //         start:8,
+        //         end:9,
+        //         url:"https://vpic.mildom.com/download/file/jp/mildom/imgs/87e483cad9c6f75b4c8c4ac6d8965ee8.png",
+        //         width:50,
+        //         height:50,
+        //     }
+        // ]
 
             pushComment(obj);
         }, 100);
