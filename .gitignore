@@ -1,1 +1,3 @@
 *.xml
+node_modules
+dist

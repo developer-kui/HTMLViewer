@@ -1,25 +1,31 @@
 $(function () {
+    const VERSION = "nico_5.0.0.3";
     const ImageMap = new Map()
     const TokenListLine = []
-
+    //フレームレート
     const FPS = 60;
+    //コメント表示秒数
     const DISPLAY_SEC = 5;
     const STEP_COE = FPS * DISPLAY_SEC;
     const LINE_SPACING = 0;
 
-    const stage = new PIXI.Container();
-
+    //テキストと画像の間隔
     const TOKEN_SPACE = 5;
-    const boxWidth = window.innerWidth;//1920
-    const boxHeight = window.innerHeight;//1920
+    //画面横幅
+    const boxWidth = window.innerWidth;
+    //画面高幅
+    const boxHeight = window.innerHeight;
+    //リングバッファサイズ(アクティブが高い場合は増やす)
     const PIXITextRingBufferSize = 100;
 
-    const url = location.href;
+    //テキストオブジェクトのリングバッファ
+    const PIXITextRingBuffer = new Array();
+
+    const stage = new PIXI.Container();
     const ticker = PIXI.Ticker.shared;
+    ticker.maxFPS = FPS;
 
-    // ticker.maxFPS = FPS;
-
-    const style = new PIXI.TextStyle({
+    const TEXT_STYLE = new PIXI.TextStyle({
         fontFamily: "メイリオ",
         fill: "white",
         fontSize: 46,
@@ -27,10 +33,20 @@ $(function () {
         fontWeight: 900,
         strokeThickness: 6
     });
-    const COMMENT_HEIGHT = PIXI.TextMetrics.measureText("■", style).height + LINE_SPACING;
+    const COMMENT_HEIGHT = PIXI.TextMetrics.measureText("■", TEXT_STYLE).height + LINE_SPACING;
     PIXI.settings.RENDER_OPTIONS.legacy = true;
-
-    const VERSION = "nico_5.0.0.3";
+    const renderer = PIXI.autoDetectRenderer(
+        {
+            width: boxWidth,
+            height: boxHeight,
+            antialias: false,
+            // backgroundColor:0,
+            // useContextAlpha:true,
+            backgroundAlpha: 0,
+            transparent: true,
+            // resolution: 1,
+            powerPreference:"high-performance"
+        });
     /************** 変更可能パラメータ **********/
     // Sytem用のコメントです(広告とか放送閉じるとか(ニコ生))
     const IS_SHOW_SYSTEM_COMMENT = true;
@@ -102,7 +118,7 @@ $(function () {
                     token.obj.scale.x = calcH;
                     token.obj.scale.y = calcH;
                 } else {
-                    token.width = PIXI.TextMetrics.measureText(token.value, style).width;
+                    token.width = PIXI.TextMetrics.measureText(token.value, TEXT_STYLE).width;
                 }
             });
 
@@ -115,12 +131,12 @@ $(function () {
             this.stepCount = Math.round((this.x + this.width) / STEP_COE);
         }
     }
-    const PIXITextRingBuffer = new Array();
-    for(var i = 0;i < PIXITextRingBufferSize;i++){
-        PIXITextRingBuffer.push(new PIXI.Text("", style));
-    }
+    //事前にオブジェクトを作成しておく
     var PIXITextRingBufferCount = 0;
-    
+    for(var i = 0;i < PIXITextRingBufferSize;i++){
+        PIXITextRingBuffer.push(new PIXI.Text("", TEXT_STYLE));
+    }
+
     function GetText(){
         const textObj = PIXITextRingBuffer[PIXITextRingBufferCount];
         PIXITextRingBufferCount++;
@@ -133,7 +149,6 @@ $(function () {
     const TYPE_IMAGE = 1;
     class Token {
         constructor(type, value) {
-
             if (type == TYPE_TEXT) {
                 this.obj = GetText();
                 this.obj.text = value;
@@ -145,7 +160,6 @@ $(function () {
             this.width = 0;
         }
     }
-
 
     function getRandomInt(max) {
         return Math.floor(Math.random() * (max + 1));
@@ -319,7 +333,6 @@ $(function () {
         }
     }
 
-
     // コメント追加用関数
     function init() {
         const obj = new Object();
@@ -331,21 +344,47 @@ $(function () {
     }
 
     init();
+    var width = 150;
+    var hight = 50;
+    // .lineStyle(1, 0x000000)   // 線のスタイル指定(幅, 色) これ以外に透明度, alignment(線の位置)などが指定可能
 
-    const renderer = PIXI.autoDetectRenderer(
-        {
-            width: boxWidth,
-            height: boxHeight,
-            antialias: false,
-            // backgroundColor:0,
-            // useContextAlpha:true,
-            backgroundAlpha: 0,
-            transparent: true,
-            // resolution: 1,
-            powerPreference:"high-performance"
-        });
-
-
+    //左から150上から75の位置に、半径60の半円を反時計回り（左回り）で描く
+    function CreateBox(url){
+        const box = new PIXI.Graphics()
+        box.beginFill(0xFF0000)
+        .drawRoundedRect(0,0,width,hight,50)
+        .endFill();
+        // const name = GetText();
+        // const sub = GetText();
+        // if (ImageMap.has(url)) {
+        //     const image = ImageMap.get(token.value)
+        //     const sprite = new PIXI.Sprite(image)
+        //     token.obj = sprite;
+        //     stage.addChild(token.obj);
+        //     imageTokenList.shift(token);
+        //     i--;
+        // }else{
+        //     const loader = new PIXI.Loader(); // 新規にローダーを作る場合
+        //     loader.add(url, url);
+        //     loader.load((loader, resources) => {
+        //         const image = resources[url].texture;
+        //         const sprite = new PIXI.Sprite(image)
+        //         ImageMap.set(url, image);
+        //         token.obj = sprite;
+        //         stage.addChild(token.obj);
+        //         loadCompleteCount++;
+        //         if (imageTokenList.length <= loadCompleteCount) {
+        //             comment.updateWidth();
+        //             WorkAddComment(comment);
+        //             complete_function();
+        //         }
+        //      });
+        // }
+        return box;
+    }
+    const box = CreateBox();
+    stage.addChild(box);
+    var x = 0;
     document.body.appendChild(renderer.view);
     ticker.add(function (time) {
         TokenListLine.forEach(tokenList => {
@@ -361,11 +400,13 @@ $(function () {
                 i--;
             }
         }
+        box.x = x;
+        x = x + 1;
         renderer.render(stage);
     });
     ticker.start();
 
-    params = url.split("?");
+    const params = location.href.split("?");
     if (1 < params.length) {
         mode = params[1].split("&");
         mode = mode[0].split("=");
@@ -405,7 +446,6 @@ $(function () {
         //         height:50,
         //     }
         // ]
-
             pushComment(obj);
         }, 100);
         StartComment(addComment);

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="Description" content="">
+
+    <title>HTMLViewer2</title>
+    <style>
+        body {
+            /* background-color: #000000; */
+            height: 100%;
+            margin: 0;
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+    <!--OBSのキャッシュ無効化対応-->
+    <script>
+        $(function () {
+            var date = (new Date).getTime();
+            var script = document.createElement('script');
+            script.type = 'text/javascript'
+            script.src = 'https://develop-kui.com/htmlviewer/beta/index.js?' + date;
+            $('head script:last').after(script);
+            script = document.createElement('script');
+            script.type = 'text/javascript'
+            script.src = 'https://develop-kui.com/htmlviewer/beta/index.js?' + date;
+            $('head script:last').after(script);
+        });
+    </script>
+</head>
+
+<body>
+</body>
+
+</html>

@@ -23,7 +23,7 @@ $(function () {
 
         /************************************************/
         //Debugモード
-        var IS_DEBUG = false;
+        var IS_DEBUG = true;
         /************************************************/
         // 時間情報のDataKey
         const FIRST_ANIMATION = "FIRST_ANIMATION";

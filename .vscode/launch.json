@@ -5,11 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "chrome",
+            "type": "pwa-chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost",
-            "url": "http://127.0.0.1:5500/browser.html",
-            "webRoot": "${workspaceFolder}"
+            "name": "Open index.html",
+            "file": "c:\\Users\\LtsAr\\OneDrive\\Desktop\\workspace\\HTMLViewer2\\HTMLViewer\\dist\\index.html"
         }
     ]
 }
