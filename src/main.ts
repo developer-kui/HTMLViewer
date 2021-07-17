@@ -4,16 +4,16 @@ import { JsonData, ImagePoint } from "./json_data";
 import * as PIXI from "pixi.js";
 
 //Debugモード
-var IS_DEBUG = true;
+var IS_DEBUG = false;
 /************************************************/
-const VERSION = "nico_5.0.0.6";
-const ImageMap = new Map<string, PIXI.Texture>()
+const VERSION = "nico_5.0.1.0";
 const TokenListLine = new Array<Array<HtmlComment>>();
 //フレームレート
 const FPS = 60;
 //コメント表示秒数
 const DISPLAY_SEC = 5;
-const SPECIAL_DISPLAY_SEC = 10;
+const SPECIAL_DISPLAY_SEC1 = 7;
+const SPECIAL_DISPLAY_SEC2 = 10;
 const LINE_SPACING = 0;
 const TOP_MERGIN = 5;
 //テキストと画像の間隔
@@ -22,18 +22,11 @@ const TOKEN_SPACE = 5;
 const boxWidth = window.innerWidth;
 //画面高幅
 const boxHeight = window.innerHeight;
-//リングバッファサイズ(アクティブが高い場合は増やす)
-const PIXITextRingBufferSize = 100;
-const PIXISpecialTextRingBufferSize = 400;
-
-//テキストオブジェクトのリングバッファ
-const PIXITextRingBuffer = new Array<PIXI.Text>();
-const PIXISpecialTextRingBuffer = new Array<PIXI.Text>();
 
 const stage = new PIXI.Container();
 
 const TEXT_STYLE = new PIXI.TextStyle({
-    fontFamily: "メイリオ",
+    fontFamily: "MS P ゴシック",
     fill: "white",
     fontSize: 46,
     lineJoin: "round",
@@ -41,14 +34,16 @@ const TEXT_STYLE = new PIXI.TextStyle({
     strokeThickness: 4
 });
 const TEXT_SPECIAL_STYLE = new PIXI.TextStyle({
-    fontFamily: "メイリオ",
+    fontFamily: "MS P ゴシック",
     fill: "white",
+    // fill: ['#FF0000', '#00FF00', '#0000FF'],
+    // fillGradientStops: [0.1, 0.7, 0.8],
+    // fillGradientType: 1,
     fontSize: 24,
     lineJoin: "round",
     fontWeight: "900",
     strokeThickness: 3
 });
-
 // var horizontal = {
 //     fill: ['#FF0000', '#00FF00', '#0000FF' ],
 //     fillGradientStops: [0.1, 0.7, 0.8],
@@ -86,8 +81,6 @@ const IS_SHOW_SYSTEM_COMMENT = false;
 const TYPE_SYSTEM_COMMENT = "System";
 const TYPE_SERVICE_COMMENT = "Service";
 var TEST_COUNT = 1;
-var lastRender = 0;
-var x = 0;
 /******************************************/
 
 const BOX_HEIGHT = COMMENT_HEIGHT - 15 - 5;
@@ -97,133 +90,97 @@ const TYPE_TEXT = 0;
 const TYPE_IMAGE = 1;
 const TYPE_SERVICE = 2;
 class HtmlComment {
-    public x: number;
+    // public x: number;
     public stepCount: number;
-    public tokens: Array<Token>;
-    public width: number;
-    public backFlg:boolean;
-    public displayTime:number;
-    public animation:boolean;
+    public tokens: PIXI.Container | PIXI.Text;
+    // public width: number;
+    public backFlg: boolean;
+    public displayTime: number;
+    public animation: boolean;
 
-    constructor(x: number) {
-        this.tokens = [];
-        this.x = x;
-        this.y = 0;
+    constructor(x: number, tokens: PIXI.Container | PIXI.Text) {
+        this.tokens = tokens;
+        this.tokens.x = x;
         this.stepCount = 0;
-        this.width = 0;
+        // this.width = 0;
         this.backFlg = false;
         this.displayTime = DISPLAY_SEC;
-        this.animation = true;
+        this.animation = false;
     }
     set y(y: number) {
-        this.tokens.forEach(token => {
-            token.obj.y = y;
-        });
+        this.tokens.y = y;
+    }
+    get x() {
+        return this.tokens.x;
+    }
+    get width() {
+        return this.tokens.width;
     }
     step() {
-        var sumWidth = 0;
-        this.x -= this.stepCount;
-        this.tokens.forEach(token => {
-            token.obj.x = this.x + sumWidth;
-            sumWidth += token.width + TOKEN_SPACE;
-            if(token.type === TYPE_SERVICE){
-                const item = token.obj.getChildAt(3);
-
-                if(item != null){
-                    if(this.animation){
-                        if(this.backFlg){
-                            item.angle = item.angle - 1;
-                        }else{
-                            item.angle = item.angle + 1;
-                        }
-                        if(25 < item.angle){
-                            this.backFlg = true;
-                        }else if(item.angle < -25){
-                            this.backFlg = false;
-                        }else{
-                        }
-                    }
+        // var sumWidth = 0;
+        this.tokens.x -= this.stepCount;
+        if (this.animation) {
+            const item = this.tokens.getChildByName(SPRITE_ITEM);
+            if (item != null) {
+                if (this.backFlg) {
+                    item.angle = item.angle - 1;
+                } else {
+                    item.angle = item.angle + 1;
+                }
+                if (25 < item.angle) {
+                    this.backFlg = true;
+                } else if (item.angle < -25) {
+                    this.backFlg = false;
+                } else {
                 }
             }
-        });
+        }
+
     }
     remove() {
-        this.tokens.forEach(token => {
-            stage.removeChild(token.obj);
-        });
+        for (var i = this.tokens.children.length - 1; i >= 0; i--) {
+            this.tokens.removeChildAt(i).destroy(true);
+        }
+        stage.removeChild(this.tokens);
+        this.tokens.destroy(true);
+        // this.tokens.destroy();
     }
     isHide() {
-        return this.x + this.width < 0
+        return this.tokens.x + this.tokens.width <= 0
     }
     updateWidth() {
-        this.tokens.forEach(token => {
-            if (token.type === TYPE_IMAGE) {
-                const image = token.obj;
-                const calcH = COMMENT_HEIGHT / image.height;
-                token.width = image.width * calcH;
-                token.obj.scale.x = calcH;
-                token.obj.scale.y = calcH;
-            } else if (token.type === TYPE_SERVICE) {
-                token.width = token.obj.width;
-            } else {
-                token.width = PIXI.TextMetrics.measureText(token.value, TEXT_STYLE).width;
-            }
-        });
-
         var sumWidth = 0;
-        this.tokens.forEach(token => {
-            token.obj.x = this.x + sumWidth;
-            sumWidth += token.width + TOKEN_SPACE;
-        });
-        this.width = sumWidth;
-        this.stepCount = Math.round((this.x + this.width) / (FPS * this.displayTime));
-    }
-}
-class Token {
-    public width: number;
-    public type: number;
-    public obj: PIXI.Container;
-    public value: string;
-    constructor(type: number, value: string) {
-        if (type == TYPE_TEXT) {
-            const textObj = GetText();
-            textObj.text = value;
-            this.obj = textObj;
-        } else {
-            this.obj = GetText();
+        if (this.tokens instanceof PIXI.Container) {
+            // }else{
+            for (var i = 0; i < this.tokens.children.length; i++) {
+                const o = this.tokens.getChildAt(i);
+                o.x = sumWidth;
+                if (o instanceof PIXI.Text) {
+                    sumWidth += o.width + TOKEN_SPACE;
+                } else if (o instanceof PIXI.Sprite) { // Within the block TypeScript knows that `x` must be a string
+                    const calcH = COMMENT_HEIGHT / o.height;
+                    o.scale.x = calcH;
+                    o.scale.y = calcH;
+                    // o.width = Math.round(o.width * calcH);
+                    sumWidth += o.width + TOKEN_SPACE;
+                } else {
+
+                }
+            }
         }
-        this.type = type;
-        this.value = value;
-        this.width = 0;
+        this.updateStepCount();
+    }
+    updateStepCount() {
+        this.stepCount = Math.round((this.tokens.x + this.tokens.width) / (FPS * this.displayTime));
     }
 }
 
-//事前にオブジェクトを作成しておく
-var PIXITextRingBufferCount = 0;
-for (var i = 0; i < PIXITextRingBufferSize; i++) {
-    PIXITextRingBuffer.push(new PIXI.Text("", TEXT_STYLE));
-}
 
-//事前にオブジェクトを作成しておく
-var PIXISpecialTextRingBufferCount = 0;
-for (var i = 0; i < PIXISpecialTextRingBufferSize; i++) {
-    PIXISpecialTextRingBuffer.push(new PIXI.Text("", TEXT_SPECIAL_STYLE));
+function GetText(text: string) {
+    return new PIXI.Text(text, TEXT_STYLE);
 }
-function GetText() {
-    const textObj = PIXITextRingBuffer[PIXITextRingBufferCount];
-    PIXITextRingBufferCount++;
-    if (PIXITextRingBufferSize <= PIXITextRingBufferCount) {
-        PIXITextRingBufferCount = 0;
-    }
-    return textObj;
-}
-function GetSpecialText() {
-    const textObj = PIXISpecialTextRingBuffer[PIXISpecialTextRingBufferCount];
-    PIXISpecialTextRingBufferCount++;
-    if (PIXISpecialTextRingBufferSize <= PIXISpecialTextRingBufferCount) {
-        PIXISpecialTextRingBufferCount = 0;
-    }
-    return textObj;
+function GetSpecialText(text: string) {
+    return new PIXI.Text(text, TEXT_SPECIAL_STYLE);
 }
 
 
@@ -291,7 +248,23 @@ function WorkAddComment(addComment: HtmlComment) {
     }
 }
 
+const MILDOM_SKIP_MESSAGE_ID_SET = new Set<number>([
+    18,//ギフトの文字列部分
+    24//Clipの文字列部分
+]);
+function isSkipCheck(json_data: JsonData) {
+    var isSkip = false;
+    if (json_data.stream_data.service_type == "Mildom") {
+        isSkip = MILDOM_SKIP_MESSAGE_ID_SET.has(json_data.message_id);
+    }
+    return isSkip;
+}
 function addComment(json_data: JsonData, complete_function: Function) {
+
+    if (isSkipCheck(json_data)) {
+        complete_function();
+        return;
+    }
     workCustomStamp(json_data);
     var comment = json_data.html_comment;
     if (!comment || 0 === comment.length) {
@@ -305,39 +278,59 @@ function addComment(json_data: JsonData, complete_function: Function) {
         comment, json_data.type, json_data.tier, json_data.tier_count, json_data.stamp_data_list, complete_function);
 }
 
+function CreateSpecialToken(tier: number,count: number, comment: HtmlComment) {
+    var num = tier;
+    if(0 < count){
+        num = tier * count;
+    }
+    if (999 <= num) {
+        comment.displayTime = SPECIAL_DISPLAY_SEC2;
+    }else if(99 <= num){
+        comment.displayTime = SPECIAL_DISPLAY_SEC1;
+    }else{
+
+    }
+    if (0 < num) {
+        comment.animation = true;
+    }
+
+    comment.updateStepCount();
+    stage.addChild(comment.tokens);
+    WorkAddComment(comment);
+}
 // コメント追加用関数
 function createComment(name: string, userImg: string,
     text: string,
     type: string, tier: number, tier_count: number, stamp_data_list: Array<ImagePoint>, complete_function: Function) {
-    const comment = new HtmlComment(boxWidth)
     if (IS_SHOW_SYSTEM_COMMENT && type === TYPE_SYSTEM_COMMENT) {
         // message.addClass("system_comment");
         complete_function();
         return;
     } else if (type === TYPE_SERVICE_COMMENT) {
+        const comment = new HtmlComment(boxWidth, new PIXI.Container())
+        const loader = new PIXI.Loader(); // 新規にローダーを作る場合
+        if (userImg == null) {
+            userImg = "https://www.mildom.com/assets/file/640bdc40a3d0fd78e9229a7751dc995d.png";
+        }
+        loader.add(userImg, userImg);
+        loader.onError.add((loader: PIXI.Loader, resource: PIXI.Resource) => {
+            complete_function();
+        });
         if (stamp_data_list !== null && 0 < stamp_data_list.length) {
-            LoadImage(stamp_data_list[0].url, function () {
-                LoadImage(userImg, function () {
-                    const special = CreateSpecialContainer(name, tier_count, tier, userImg, stamp_data_list[0].url);
-                    const token = new Token(TYPE_SERVICE, "");
-                    token.obj = special;
-                    if(2000 <= tier){
-                        comment.displayTime = SPECIAL_DISPLAY_SEC;
-                    }else if(tier == 0){
-                        comment.animation = false;
-                    }else{
-
-                    }
-                    stage.addChild(token.obj);
-                    comment.tokens.push(token);
-
-                    comment.updateWidth();
-                    WorkAddComment(comment);
-                    complete_function();
-                });
+            loader.add(stamp_data_list[0].url, stamp_data_list[0].url);
+            loader.load((loader, resources) => {
+                CreateSpecialContainer(comment.tokens, name, tier_count, tier,
+                    resources[userImg].texture, resources[stamp_data_list[0].url].texture);
+                CreateSpecialToken(tier,tier_count, comment);
+                complete_function();
             });
         } else {
-            complete_function();
+            loader.load((loader, resources) => {
+                CreateSpecialContainerTextOnly(comment.tokens, name, text, tier, resources[userImg].texture);
+                CreateSpecialToken(tier,tier_count, comment);
+                complete_function();
+            });
+
         }
         return;
     } else {
@@ -345,10 +338,11 @@ function createComment(name: string, userImg: string,
     }
 
     if (stamp_data_list && 0 < stamp_data_list.length) {
+        const comment = new HtmlComment(boxWidth, new PIXI.Container())
         stamp_data_list.sort(function (a, b) {
             return b.start - a.start;
         });
-        const imageTokenList = new Array<Token>();
+        const tokenArray = new Array<[number, string]>();
 
         stamp_data_list.forEach(stamp_data => {
             const url = stamp_data.url.replace("https", "http");
@@ -356,73 +350,61 @@ function createComment(name: string, userImg: string,
             const back = text.slice(stamp_data.end + 1);
 
             if (0 < back.length) {
-                const textToken = new Token(TYPE_TEXT, back);
-                stage.addChild(textToken.obj);
-                comment.tokens.unshift(textToken);
+                tokenArray.push([TYPE_TEXT, back]);
             }
-            const imageToken = new Token(TYPE_IMAGE, url);
-            imageTokenList.push(imageToken);
-            comment.tokens.unshift(imageToken);
-
+            tokenArray.push([TYPE_IMAGE, url]);
             text = front;
         });
-        if (0 < text.length) {
-            const textToken = new Token(TYPE_TEXT, text);
-            stage.addChild(textToken.obj);
-            comment.tokens.unshift(textToken);
-        }
-        if (0 < imageTokenList.length) {
 
-            for (var i = 0; i < imageTokenList.length; i++) {
-                const token = imageTokenList[i];
-                const url = token.value;
-                if (ImageMap.has(url)) {
-                    const image = ImageMap.get(token.value)
-                    const sprite = new PIXI.Sprite(image)
-                    token.obj = sprite;
-                    stage.addChild(token.obj);
-                    imageTokenList.shift();
-                    i--;
+        if (0 < text.length) {
+            tokenArray.push([TYPE_TEXT, text]);
+        }
+
+        tokenArray.reverse();
+        const loader = new PIXI.Loader(); // 新規にローダーを作る場合
+        const checkSet = new Set()
+        tokenArray.forEach(token => {
+            if (token[0] == TYPE_IMAGE) {
+                if (!checkSet.has(token[1])) {
+                    checkSet.add(token[1])
+                    loader.add(token[1], token[1]);
                 }
             }
-            if (0 < imageTokenList.length) {
-                var loadCompleteCount = 0;
-                imageTokenList.forEach(token => {
-                    const url = token.value;
-                    const loader = new PIXI.Loader(); // 新規にローダーを作る場合
-                    loader.add(url, url);
-                    loader.load((loader, resources) => {
-                        const image = resources[url].texture;
-                        const sprite = new PIXI.Sprite(image)
-                        ImageMap.set(url, image);
-                        token.obj = sprite;
-                        stage.addChild(token.obj);
-                        loadCompleteCount++;
-                        if (imageTokenList.length <= loadCompleteCount) {
-                            comment.updateWidth();
-                            WorkAddComment(comment);
-                            complete_function();
-                        }
-                    });
-                });
-            } else {
-                comment.updateWidth();
-                WorkAddComment(comment);
-                complete_function();
-            }
-
-        } else {
+        });
+        loader.load((loader, resources) => {
+            tokenArray.forEach(token => {
+                if (token[0] == TYPE_IMAGE) {
+                    const image = resources[token[1]].texture;
+                    const sprite = new PIXI.Sprite(image)
+                    // ImageMap.set(token[1], image);
+                    comment.tokens.addChild(sprite);
+                } else {
+                    const textToken = GetText(token[1]);
+                    comment.tokens.addChild(textToken);
+                }
+            });
             comment.updateWidth();
+            stage.addChild(comment.tokens);
             WorkAddComment(comment);
             complete_function();
-        }
+        });
+        // for (var i = 0; i < imageURLList.length; i++) {
+        //     const url = imageURLList[i];
+        //     if (ImageMap.has(url)) {
+        //         const image = ImageMap.get(url)
+        //         const sprite = new PIXI.Sprite(image)
+        //         comment.tokens.addChild(sprite);
+        //         imageURLList.shift();
+        //         i--;
+        //     }
+        // }
 
     } else {
-        const textToken = new Token(TYPE_TEXT, text);
-        stage.addChild(textToken.obj);
-        comment.tokens.push(textToken);
+        const textObj = GetText(text);
+        const comment = new HtmlComment(boxWidth, textObj);
 
         comment.updateWidth();
+        stage.addChild(comment.tokens);
         WorkAddComment(comment);
         complete_function();
     }
@@ -431,7 +413,7 @@ function createComment(name: string, userImg: string,
 // コメント追加用関数
 function init() {
     const obj = new JsonData();
-    obj["user_data"] = { name: "kui", img: "https://pbs.twimg.com/profile_images/2235314315/IMG_0332_400x400.JPG" };
+    obj["user_data"] = { name: "kui", img: "https://pbs.twimg.com/profile_images/2235314315/IMG_0332_400x400.JPG", is_master: true };
     obj["comment"] = "Hello　MCV(^∇^)/ " + VERSION;
     // const stream_data = { stream_name: "", service_name: "" };
     // obj["stream_data"] = stream_data;
@@ -440,23 +422,6 @@ function init() {
 
 init();
 
-
-function LoadImage(url: string, func: Function) {
-    if (url != undefined && !ImageMap.has(url)) {
-        const loader = new PIXI.Loader(); // 新規にローダーを作る場合
-        loader.add(url, url);
-        loader.onError.add((loader: PIXI.Loader, resource: PIXI.Resource) => {
-            func();
-        }); // called once per errored file
-        loader.load((loader, resources) => {
-            ImageMap.set(url, resources[url].texture);
-            func();
-        });
-
-    } else {
-        func();
-    }
-}
 
 function GetColor(tier: number) {
     if (tier == 0) {
@@ -475,13 +440,71 @@ function GetColor(tier: number) {
     return 0xFF0000;
 }
 //左から150上から75の位置に、半径60の半円を反時計回り（左回り）で描く
-function CreateSpecialContainer(name: string, num: number, tier: number, headUrl: string, itemUrl: string) {
-    const headerImage = ImageMap.get(headUrl)
-    const itemImage = ImageMap.get(itemUrl)
-    const specialStage = new PIXI.Container();
+function CreateSpecialContainer(specialStage: PIXI.Container, name: string, num: number, tier: number, headerImage: PIXI.Texture, itemImage: PIXI.Texture) {
 
-    if (itemImage !== undefined && headerImage !== undefined) {
+    if (itemImage !== undefined && headerImage !== undefined && itemImage !== undefined) {
+        const headerSprite = new PIXI.Sprite(headerImage)
         const itemSprite = new PIXI.Sprite(itemImage)
+
+        var pointX = 4;
+        const pointY = 19;
+        const iconSize = BOX_HEIGHT - 10;
+
+        /** Header **/
+        const graphics = new PIXI.Graphics().lineStyle(0)
+            .beginFill(0x000000, 1)
+            .drawCircle(pointX + (iconSize / 2), pointY + (iconSize / 2), iconSize / 2)
+            .endFill();
+        headerSprite.mask = graphics;
+        headerSprite.x = pointX;
+        headerSprite.y = pointY;
+        headerSprite.width = iconSize;
+        headerSprite.height = iconSize;
+        headerSprite.name = SPRITE_HEDER;
+        pointX = pointX + iconSize;
+        /** Name **/
+        const nameText = GetSpecialText(name);
+        nameText.x = pointX + 3;
+        nameText.y = 20;
+        headerSprite.name = SPRITE_NAME;
+        pointX = nameText.x + nameText.width;
+
+        /** Item **/
+        const calcH = (COMMENT_HEIGHT - 2) / itemSprite.height;
+        itemSprite.scale.x = calcH;
+        itemSprite.scale.y = calcH;
+        itemSprite.x = pointX + 1 + (itemSprite.width / 2);
+        itemSprite.y = + (itemSprite.height / 2);
+        itemSprite.anchor.set(0.5);
+        itemSprite.name = SPRITE_ITEM;
+
+        pointX = pointX + 1 + itemSprite.width;
+        var numText = null;
+        /** Sub **/
+        if (1 < num) {
+            numText = GetSpecialText("x " + num.toString());
+            numText.x = pointX;
+            numText.y = 20;
+            pointX = numText.x + numText.width;
+        }
+        /** Box **/
+        const box = new PIXI.Graphics()
+        box.beginFill(GetColor(tier), 0.8)
+            .drawRoundedRect(0, 15, pointX + 8, BOX_HEIGHT, 50)
+            .endFill();
+        box.name = SPRITE_BOX;
+
+        if (numText != null) {
+            specialStage.addChild(box, graphics, headerSprite, itemSprite, nameText, numText);
+        } else {
+            specialStage.addChild(box, graphics, headerSprite, itemSprite, nameText);
+        }
+    }
+
+}
+function CreateSpecialContainerTextOnly(specialStage: PIXI.Container, name: string, text: string, tier: number, headerImage: PIXI.Texture) {
+
+    if (headerImage !== undefined) {
         const headerSprite = new PIXI.Sprite(headerImage)
 
         var pointX = 4;
@@ -501,54 +524,43 @@ function CreateSpecialContainer(name: string, num: number, tier: number, headUrl
         headerSprite.name = SPRITE_HEDER;
         pointX = pointX + iconSize;
         /** Name **/
-        const nameText = GetSpecialText();
+        const nameText = GetSpecialText(name + ":" + text);
         nameText.x = pointX + 3;
         nameText.y = 20;
-        nameText.text = name;
         headerSprite.name = SPRITE_NAME;
         pointX = nameText.x + nameText.width;
 
-        /** Item **/
-        const calcH = (COMMENT_HEIGHT - 2) / itemSprite.height;
-        itemSprite.scale.x = calcH;
-        itemSprite.scale.y = calcH;
-        itemSprite.x = pointX + 1 + (itemSprite.width / 2);
-        itemSprite.y = + (itemSprite.height / 2);
-        itemSprite.anchor.set(0.5);
-        headerSprite.name = SPRITE_ITEM;
-
-        pointX = pointX + 1 + itemSprite.width;
-        var numText = null;
-        /** Sub **/
-        if (1 < num) {
-            numText = GetSpecialText();
-            numText.x = pointX;
-            numText.y = 20;
-            numText.text = "x " + num.toString();
-            pointX = numText.x + numText.width;
-        }
         /** Box **/
         const box = new PIXI.Graphics()
-        box.beginFill(GetColor(tier),0.8)
+        box.beginFill(GetColor(tier), 0.8)
             .drawRoundedRect(0, 15, pointX + 8, BOX_HEIGHT, 50)
             .endFill();
         box.name = SPRITE_BOX;
 
-        if (numText != null) {
-            specialStage.addChild(box,graphics,headerSprite,itemSprite,nameText,numText);
-        }else{
-            specialStage.addChild(box,graphics,headerSprite,itemSprite,nameText);
-        }
+        specialStage.addChild(box, graphics, headerSprite, nameText);
     }
-
-    return specialStage;
 }
 document.body.appendChild(renderer.view);
 
-
+var a = 0.1;
+var b = 0.7;
+var c = 0.8;
 function animate(timestamp: number) {
     // console.log(1000/(timestamp - lastRender));
 
+    // TEXT_SPECIAL_STYLE.fillGradientStops = [a, b, c];
+    // a = a + 0.1;
+    // b = b + 0.1;
+    // c = c + 0.1;
+    // if(1.0 <= a){
+    //     a = 0;
+    // }
+    // if(1.0 <= b){
+    //     b = 0;
+    // }
+    // if(1.0 <= c){
+    //     c = 0;
+    // }
     TokenListLine.forEach(tokenList => {
         tokenList.forEach(token => {
             token.step();
@@ -565,8 +577,8 @@ function animate(timestamp: number) {
         }
     }
 
-    lastRender = timestamp;
     renderer.render(stage);
+    PIXI.utils.clearTextureCache();
     window.requestAnimationFrame(animate);
 };
 
@@ -577,75 +589,226 @@ window.requestAnimationFrame(animate);
 if (IS_DEBUG) {
     setInterval(function () {
         const obj = new JsonData();
-        obj["user_data"] = { name: "kui", img: "https://pbs.twimg.com/profile_images/2235314315/IMG_0332_400x400.JPG" };
+        obj["user_data"] = { name: "kui", img: "https://pbs.twimg.com/profile_images/2235314315/IMG_0332_400x400.JPG", is_master: true };
         var comment = "TEST:" + TEST_COUNT++;
         const length = getRandomInt(10);
         for (var i = 0; i < length; i++) {
             comment = comment + "★";
         }
         obj["comment"] = comment;
-        obj["type"] = "Service";
+        // obj["comment"] = "あああ*あああ";
+        // obj["html_comment"] = "あああ[/1021]あああ";
+        obj["type"] = "Normal";
         obj["tier_count"] = i;
-        const stream_data = { stream_name: "", service_name: "" };
-        if (i < 3) {
-            obj["tier"] = 0;
-            // obj["stream_data"] = stream_data;
+        // obj["stamp_data_list"] = [{
+        //     start: 3,
+        //     end: 9,
+        //     url: 'https://res.mildom.com/download/file/jp/mildom/nngift/5cfd61003caa8f873f3db0b6ec1ff905.png',
+        //     width: 50,
+        //     height: 50,
+        // }]
+        const stream_data = { stream_name: "", service_name: "", service_type: "Mildom" };
+        // if (i < 3) {
+        obj["tier"] = 0;
+        obj["stream_data"] = stream_data;
+        if (length < 5) {
             obj["stamp_data_list"] = [{
-                start: 0,
-                end: 1,
+                start: 7,
+                end: 7,
                 url: 'https://res.mildom.com/download/file/jp/mildom/nngift/5cfd61003caa8f873f3db0b6ec1ff905.png',
                 width: 50,
                 height: 50,
-            }
-            ]
-
-        } else if (i < 6) {
-            obj["tier"] = 1999;
-            // obj["stream_data"] = stream_data;
-            obj["stamp_data_list"] = [{
-                start: 0,
-                end: 1,
-                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/5f286b7b9f4efc5e8d020a26d646b5f2.png',
-                width: 50,
-                height: 50,
-            }
-            ]
-        } else if (i < 8) {
-            obj["tier"] = 2000;
-            // obj["stream_data"] = stream_data;
-            obj["stamp_data_list"] = [{
-                start: 0,
-                end: 1,
+            }, {
+                start: 7,
+                end: 7,
                 url: 'https://res.mildom.com/download/file/jp/mildom/nngift/914f4fb57a7eb792b06c41bea5dfd269.png',
                 width: 50,
                 height: 50,
-            }
-            ]
-        } else if (i < 10) {
-
-            obj["tier"] = 4000;
-            // obj["stream_data"] = stream_data;
-            obj["stamp_data_list"] = [{
-                start: 0,
-                end: 1,
+            }, {
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/5b85d751779a2ccbc359b0d51cc40e3b.png',
+                width: 50,
+                height: 50,
+            }, {
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/d021ac8a2e24b7f6a8021fce061c748c.png',
+                width: 50,
+                height: 50,
+            }, {
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/004a0cf52395d4adf392f4ec1c36af95.png',
+                width: 50,
+                height: 50,
+            }, {
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/93229ac116445cfb9416136f6a3db43e.png',
+                width: 50,
+                height: 50,
+            }, {
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/d37caf7376cfef3427ee604aa12e6b10.png',
+                width: 50,
+                height: 50,
+            }, {
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/aaa9de1af4b28a3d5c3adc153519ae32.png',
+                width: 50,
+                height: 50,
+            }, {
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/eb4842eeb9e24db1016311676a877146.png',
+                width: 50,
+                height: 50,
+            }, {
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/f52734dae2d37ae0ec60f228dae1f10e.png',
+                width: 50,
+                height: 50,
+            }, {
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/0312b4f98daf2de1f5abfd86f8f91b79.png',
+                width: 50,
+                height: 50,
+            }, {
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/2b6027d02b6075e77544f274fb7bae7a.png',
+                width: 50,
+                height: 50,
+            }, {
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/b9e18492f57ac1b6b4bf3d5ef14f1f27.png',
+                width: 50,
+                height: 50,
+            }, {
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/407e5ee25094d7d95912c57a4b7b8bab.png',
+                width: 50,
+                height: 50,
+            }, {
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/5cfd61003caa8f873f3db0b6ec1ff905.png',
+                width: 50,
+                height: 50,
+            }, {
+                start: 32,
+                end: 7,
+                url: 'https://vpic.mildom.com/download/file/jp/mildom/cms/d54330db3e8356f62884a57bc8668f65.png',
+                width: 50,
+                height: 50,
+            }, {
+                start: 14,
+                end: 7,
                 url: 'https://res.mildom.com/download/file/jp/mildom/nngift/9c11bafe711f18b176b76ec29e4c2823.png',
                 width: 50,
                 height: 50,
-            }
-            ]
-        } else {
-
-            obj["tier"] = 9000;
-            // obj["stream_data"] = stream_data;
-            obj["stamp_data_list"] = [{
-                start: 0,
-                end: 1,
-                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/465a50bfb19a3580fbce507f01d9fc75.png',
+            }, {
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/914f4fb57a7eb792b06c41bea5dfd269.png',
                 width: 50,
                 height: 50,
-            }
+            }, {
+                start: 0,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/5f286b7b9f4efc5e8d020a26d646b5f2.png',
+                width: 50,
+                height: 50,
+            },
             ]
         }
+        else {
+
+            obj["stamp_data_list"] = [{
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/fe8bac3f31b9693aeb2305e6c2c23be5.png',
+                width: 50,
+                height: 50,
+            }, {
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/f5de221cc0bdb6ff3f2f15fdcb9005e2.png',
+                width: 50,
+                height: 50,
+            }, {
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/42eef16c6c907d5c7fe795cc5f919a20.png',
+                width: 50,
+                height: 50,
+            }, {
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/d021ac8a2e24b7f6a8021fce061c748c.png',
+                width: 50,
+                height: 50,
+            }, {
+                start: 7,
+                end: 7,
+                url: 'https://res.mildom.com/download/file/jp/mildom/nngift/004a0cf52395d4adf392f4ec1c36af95.png',
+                width: 50,
+                height: 50,
+            }]
+        }
+        obj["tier"] = 1999;
+        // obj["stream_data"] = stream_data;
+        obj["stamp_data_list"] = [{
+            start: 0,
+            end: 1,
+            url: 'https://res.mildom.com/download/file/jp/mildom/nngift/5f286b7b9f4efc5e8d020a26d646b5f2.png',
+            width: 50,
+            height: 50,
+        }
+        ]
+        // } else if (i < 8) {
+        //     obj["tier"] = 2000;
+        //     // obj["stream_data"] = stream_data;
+        //     obj["stamp_data_list"] = [{
+        //         start: 0,
+        //         end: 1,
+        //         url: 'https://res.mildom.com/download/file/jp/mildom/nngift/914f4fb57a7eb792b06c41bea5dfd269.png',
+        //         width: 50,
+        //         height: 50,
+        //     }
+        //     ]
+        // } else if (i < 10) {
+
+        //     obj["tier"] = 4000;
+        //     // obj["stream_data"] = stream_data;
+        //     obj["stamp_data_list"] = [{
+        //         start: 0,
+        //         end: 1,
+        //         url: 'https://res.mildom.com/download/file/jp/mildom/nngift/9c11bafe711f18b176b76ec29e4c2823.png',
+        //         width: 50,
+        //         height: 50,
+        //     }
+        //     ]
+        // } else {
+
+        //     obj["tier"] = 9000;
+        //     // obj["stream_data"] = stream_data;
+        //     obj["stamp_data_list"] = [{
+        //         start: 0,
+        //         end: 1,
+        //         url: 'https://res.mildom.com/download/file/jp/mildom/nngift/465a50bfb19a3580fbce507f01d9fc75.png',
+        //         width: 50,
+        //         height: 50,
+        //     }
+        //     ]
+        // }
         pushComment(obj);
     }, 100);
     StartComment(addComment);
