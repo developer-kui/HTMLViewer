@@ -1,12 +1,13 @@
 
 import { pushComment, StartComment } from "./mcv_client";
 import { JsonData, ImagePoint } from "./json_data";
+import { HtmlComment } from "./html_comment";
 import * as PIXI from "pixi.js";
 
 //Debugモード
 var IS_DEBUG = false;
 /************************************************/
-const VERSION = "nico_5.0.1.0";
+const VERSION = "nico_5.0.1.1";
 const TokenListLine = new Array<Array<HtmlComment>>();
 //フレームレート
 const FPS = 60;
@@ -16,15 +17,11 @@ const SPECIAL_DISPLAY_SEC1 = 7;
 const SPECIAL_DISPLAY_SEC2 = 10;
 const LINE_SPACING = 0;
 const TOP_MERGIN = 5;
-//テキストと画像の間隔
-const TOKEN_SPACE = 5;
 //画面横幅
 const boxWidth = window.innerWidth;
 //画面高幅
 const boxHeight = window.innerHeight;
-
 const stage = new PIXI.Container();
-
 const TEXT_STYLE = new PIXI.TextStyle({
     fontFamily: "MS P ゴシック",
     fill: "white",
@@ -66,12 +63,9 @@ const renderer = PIXI.autoDetectRenderer(
         height: boxHeight,
         antialias: false,
         backgroundAlpha: 0,
-        // backgroundColor:0,
-        // useContextAlpha:true,
-        // transparent: true,//v5
-        // resolution: 1,
         powerPreference: "high-performance"
     });
+document.body.appendChild(renderer.view);
 /************** 変更可能パラメータ **********/
 // Sytem用のコメントです(広告とか放送閉じるとか(ニコ生))
 const IS_SHOW_SYSTEM_COMMENT = false;
@@ -89,91 +83,6 @@ const STAMP_DATA = new Map<string, Array<string>>()
 const TYPE_TEXT = 0;
 const TYPE_IMAGE = 1;
 const TYPE_SERVICE = 2;
-class HtmlComment {
-    // public x: number;
-    public stepCount: number;
-    public tokens: PIXI.Container | PIXI.Text;
-    // public width: number;
-    public backFlg: boolean;
-    public displayTime: number;
-    public animation: boolean;
-
-    constructor(x: number, tokens: PIXI.Container | PIXI.Text) {
-        this.tokens = tokens;
-        this.tokens.x = x;
-        this.stepCount = 0;
-        // this.width = 0;
-        this.backFlg = false;
-        this.displayTime = DISPLAY_SEC;
-        this.animation = false;
-    }
-    set y(y: number) {
-        this.tokens.y = y;
-    }
-    get x() {
-        return this.tokens.x;
-    }
-    get width() {
-        return this.tokens.width;
-    }
-    step() {
-        // var sumWidth = 0;
-        this.tokens.x -= this.stepCount;
-        if (this.animation) {
-            const item = this.tokens.getChildByName(SPRITE_ITEM);
-            if (item != null) {
-                if (this.backFlg) {
-                    item.angle = item.angle - 1;
-                } else {
-                    item.angle = item.angle + 1;
-                }
-                if (25 < item.angle) {
-                    this.backFlg = true;
-                } else if (item.angle < -25) {
-                    this.backFlg = false;
-                } else {
-                }
-            }
-        }
-
-    }
-    remove() {
-        for (var i = this.tokens.children.length - 1; i >= 0; i--) {
-            this.tokens.removeChildAt(i).destroy(true);
-        }
-        stage.removeChild(this.tokens);
-        this.tokens.destroy(true);
-        // this.tokens.destroy();
-    }
-    isHide() {
-        return this.tokens.x + this.tokens.width <= 0
-    }
-    updateWidth() {
-        var sumWidth = 0;
-        if (this.tokens instanceof PIXI.Container) {
-            // }else{
-            for (var i = 0; i < this.tokens.children.length; i++) {
-                const o = this.tokens.getChildAt(i);
-                o.x = sumWidth;
-                if (o instanceof PIXI.Text) {
-                    sumWidth += o.width + TOKEN_SPACE;
-                } else if (o instanceof PIXI.Sprite) { // Within the block TypeScript knows that `x` must be a string
-                    const calcH = COMMENT_HEIGHT / o.height;
-                    o.scale.x = calcH;
-                    o.scale.y = calcH;
-                    // o.width = Math.round(o.width * calcH);
-                    sumWidth += o.width + TOKEN_SPACE;
-                } else {
-
-                }
-            }
-        }
-        this.updateStepCount();
-    }
-    updateStepCount() {
-        this.stepCount = Math.round((this.tokens.x + this.tokens.width) / (FPS * this.displayTime));
-    }
-}
 
 
 function GetText(text: string) {
@@ -182,8 +91,6 @@ function GetText(text: string) {
 function GetSpecialText(text: string) {
     return new PIXI.Text(text, TEXT_SPECIAL_STYLE);
 }
-
-
 function getRandomInt(max: number) {
     return Math.floor(Math.random() * (max + 1));
 }
@@ -249,6 +156,8 @@ function WorkAddComment(addComment: HtmlComment) {
 }
 
 const MILDOM_SKIP_MESSAGE_ID_SET = new Set<number>([
+    4,//フォロー通知
+    14,//入出通知
     18,//ギフトの文字列部分
     24//Clipの文字列部分
 ]);
@@ -278,23 +187,23 @@ function addComment(json_data: JsonData, complete_function: Function) {
         comment, json_data.type, json_data.tier, json_data.tier_count, json_data.stamp_data_list, complete_function);
 }
 
-function CreateSpecialToken(tier: number,count: number, comment: HtmlComment) {
+function CreateSpecialToken(tier: number, count: number, comment: HtmlComment) {
     var num = tier;
-    if(0 < count){
+    if (0 < count) {
         num = tier * count;
     }
     if (999 <= num) {
         comment.displayTime = SPECIAL_DISPLAY_SEC2;
-    }else if(99 <= num){
+    } else if (99 <= num) {
         comment.displayTime = SPECIAL_DISPLAY_SEC1;
-    }else{
+    } else {
 
     }
     if (0 < num) {
         comment.animation = true;
     }
 
-    comment.updateStepCount();
+    comment.updateStepCount(FPS);
     stage.addChild(comment.tokens);
     WorkAddComment(comment);
 }
@@ -307,7 +216,7 @@ function createComment(name: string, userImg: string,
         complete_function();
         return;
     } else if (type === TYPE_SERVICE_COMMENT) {
-        const comment = new HtmlComment(boxWidth, new PIXI.Container())
+        const comment = new HtmlComment(boxWidth, DISPLAY_SEC, new PIXI.Container())
         const loader = new PIXI.Loader(); // 新規にローダーを作る場合
         if (userImg == null) {
             userImg = "https://www.mildom.com/assets/file/640bdc40a3d0fd78e9229a7751dc995d.png";
@@ -321,13 +230,13 @@ function createComment(name: string, userImg: string,
             loader.load((loader, resources) => {
                 CreateSpecialContainer(comment.tokens, name, tier_count, tier,
                     resources[userImg].texture, resources[stamp_data_list[0].url].texture);
-                CreateSpecialToken(tier,tier_count, comment);
+                CreateSpecialToken(tier, tier_count, comment);
                 complete_function();
             });
         } else {
             loader.load((loader, resources) => {
                 CreateSpecialContainerTextOnly(comment.tokens, name, text, tier, resources[userImg].texture);
-                CreateSpecialToken(tier,tier_count, comment);
+                CreateSpecialToken(tier, tier_count, comment);
                 complete_function();
             });
 
@@ -338,7 +247,7 @@ function createComment(name: string, userImg: string,
     }
 
     if (stamp_data_list && 0 < stamp_data_list.length) {
-        const comment = new HtmlComment(boxWidth, new PIXI.Container())
+        const comment = new HtmlComment(boxWidth, DISPLAY_SEC, new PIXI.Container())
         stamp_data_list.sort(function (a, b) {
             return b.start - a.start;
         });
@@ -383,27 +292,17 @@ function createComment(name: string, userImg: string,
                     comment.tokens.addChild(textToken);
                 }
             });
-            comment.updateWidth();
+            comment.updateWidth(FPS, COMMENT_HEIGHT);
             stage.addChild(comment.tokens);
             WorkAddComment(comment);
             complete_function();
         });
-        // for (var i = 0; i < imageURLList.length; i++) {
-        //     const url = imageURLList[i];
-        //     if (ImageMap.has(url)) {
-        //         const image = ImageMap.get(url)
-        //         const sprite = new PIXI.Sprite(image)
-        //         comment.tokens.addChild(sprite);
-        //         imageURLList.shift();
-        //         i--;
-        //     }
-        // }
 
     } else {
         const textObj = GetText(text);
-        const comment = new HtmlComment(boxWidth, textObj);
+        const comment = new HtmlComment(boxWidth, DISPLAY_SEC, textObj);
 
-        comment.updateWidth();
+        comment.updateWidth(FPS, COMMENT_HEIGHT);
         stage.addChild(comment.tokens);
         WorkAddComment(comment);
         complete_function();
@@ -443,7 +342,6 @@ function GetColor(tier: number) {
 function CreateSpecialContainer(specialStage: PIXI.Container, name: string, num: number, tier: number, headerImage: PIXI.Texture, itemImage: PIXI.Texture) {
 
     if (itemImage !== undefined && headerImage !== undefined && itemImage !== undefined) {
-        const headerSprite = new PIXI.Sprite(headerImage)
         const itemSprite = new PIXI.Sprite(itemImage)
 
         var pointX = 4;
@@ -451,22 +349,12 @@ function CreateSpecialContainer(specialStage: PIXI.Container, name: string, num:
         const iconSize = BOX_HEIGHT - 10;
 
         /** Header **/
-        const graphics = new PIXI.Graphics().lineStyle(0)
-            .beginFill(0x000000, 1)
-            .drawCircle(pointX + (iconSize / 2), pointY + (iconSize / 2), iconSize / 2)
-            .endFill();
-        headerSprite.mask = graphics;
-        headerSprite.x = pointX;
-        headerSprite.y = pointY;
-        headerSprite.width = iconSize;
-        headerSprite.height = iconSize;
-        headerSprite.name = SPRITE_HEDER;
-        pointX = pointX + iconSize;
+        const mask = CreateHeaderSpriteMask(iconSize, pointX, pointY);
+        const headerSprite = CreateHeaderSprite(mask, headerImage, iconSize, pointX);
+        pointX = headerSprite.x + headerSprite.width;
+
         /** Name **/
-        const nameText = GetSpecialText(name);
-        nameText.x = pointX + 3;
-        nameText.y = 20;
-        headerSprite.name = SPRITE_NAME;
+        const nameText = CreateNameText(name, pointX);
         pointX = nameText.x + nameText.width;
 
         /** Item **/
@@ -488,79 +376,71 @@ function CreateSpecialContainer(specialStage: PIXI.Container, name: string, num:
             pointX = numText.x + numText.width;
         }
         /** Box **/
-        const box = new PIXI.Graphics()
-        box.beginFill(GetColor(tier), 0.8)
-            .drawRoundedRect(0, 15, pointX + 8, BOX_HEIGHT, 50)
-            .endFill();
-        box.name = SPRITE_BOX;
+        const box = CreateBox(pointX, GetColor(tier));
 
         if (numText != null) {
-            specialStage.addChild(box, graphics, headerSprite, itemSprite, nameText, numText);
+            specialStage.addChild(box, mask, headerSprite, itemSprite, nameText, numText);
         } else {
-            specialStage.addChild(box, graphics, headerSprite, itemSprite, nameText);
+            specialStage.addChild(box, mask, headerSprite, itemSprite, nameText);
         }
     }
-
+}
+const HEADER_ITEM_Y = 19
+function CreateHeaderSpriteMask(iconSize: number, x: number, y: number) {
+    const num = iconSize / 2;
+    return new PIXI.Graphics().lineStyle(0)
+        .beginFill(0x000000, 1)
+        .drawCircle(x + num, y + num, num)
+        .endFill();
+}
+function CreateHeaderSprite(mask: PIXI.Graphics, headerImage: PIXI.Texture, iconSize: number, x: number) {
+    const headerSprite = new PIXI.Sprite(headerImage);
+    headerSprite.mask = mask;
+    headerSprite.x = x;
+    headerSprite.y = HEADER_ITEM_Y;
+    headerSprite.width = iconSize;
+    headerSprite.height = iconSize;
+    headerSprite.name = SPRITE_HEDER;
+    return headerSprite;
+}
+function CreateBox(pointX: number, color: number) {
+    const box = new PIXI.Graphics()
+    box.beginFill(color, 0.8)
+        .drawRoundedRect(0, 15, pointX + 8, BOX_HEIGHT, 50)
+        .endFill();
+    box.name = SPRITE_BOX;
+    return box;
+}
+function CreateNameText(text: string, x: number) {
+    const nameText = GetSpecialText(text);
+    nameText.x = x + 3;
+    nameText.y = 20;
+    nameText.name = SPRITE_NAME;
+    return nameText;
 }
 function CreateSpecialContainerTextOnly(specialStage: PIXI.Container, name: string, text: string, tier: number, headerImage: PIXI.Texture) {
 
     if (headerImage !== undefined) {
-        const headerSprite = new PIXI.Sprite(headerImage)
-
         var pointX = 4;
         const pointY = 19;
         const iconSize = BOX_HEIGHT - 10;
 
         /** Header **/
-        const graphics = new PIXI.Graphics().lineStyle(0)
-            .beginFill(0x000000, 1)
-            .drawCircle(pointX + (iconSize / 2), pointY + (iconSize / 2), iconSize / 2)
-            .endFill();
-        headerSprite.mask = graphics;
-        headerSprite.x = pointX;
-        headerSprite.y = pointY;
-        headerSprite.width = iconSize;
-        headerSprite.height = iconSize;
-        headerSprite.name = SPRITE_HEDER;
-        pointX = pointX + iconSize;
+        const mask = CreateHeaderSpriteMask(iconSize, pointX, pointY);
+        const headerSprite = CreateHeaderSprite(mask, headerImage, iconSize, pointX);
+        pointX = headerSprite.x + headerSprite.width;
         /** Name **/
-        const nameText = GetSpecialText(name + ":" + text);
-        nameText.x = pointX + 3;
-        nameText.y = 20;
-        headerSprite.name = SPRITE_NAME;
+        const nameText = CreateNameText(name + ":" + text, pointX);
         pointX = nameText.x + nameText.width;
 
         /** Box **/
-        const box = new PIXI.Graphics()
-        box.beginFill(GetColor(tier), 0.8)
-            .drawRoundedRect(0, 15, pointX + 8, BOX_HEIGHT, 50)
-            .endFill();
-        box.name = SPRITE_BOX;
-
-        specialStage.addChild(box, graphics, headerSprite, nameText);
+        const box = CreateBox(pointX, GetColor(tier));
+        specialStage.addChild(box, mask, headerSprite, nameText);
     }
 }
-document.body.appendChild(renderer.view);
 
-var a = 0.1;
-var b = 0.7;
-var c = 0.8;
 function animate(timestamp: number) {
-    // console.log(1000/(timestamp - lastRender));
 
-    // TEXT_SPECIAL_STYLE.fillGradientStops = [a, b, c];
-    // a = a + 0.1;
-    // b = b + 0.1;
-    // c = c + 0.1;
-    // if(1.0 <= a){
-    //     a = 0;
-    // }
-    // if(1.0 <= b){
-    //     b = 0;
-    // }
-    // if(1.0 <= c){
-    //     c = 0;
-    // }
     TokenListLine.forEach(tokenList => {
         tokenList.forEach(token => {
             token.step();
@@ -571,7 +451,7 @@ function animate(timestamp: number) {
         if (0 < tokenList.length && tokenList[0].isHide()) {
             const comment = tokenList.shift();
             if (comment != undefined) {
-                comment.remove();
+                comment.remove(stage);
             }
             i--;
         }
@@ -598,7 +478,7 @@ if (IS_DEBUG) {
         obj["comment"] = comment;
         // obj["comment"] = "あああ*あああ";
         // obj["html_comment"] = "あああ[/1021]あああ";
-        obj["type"] = "Normal";
+        obj["type"] = "Service";
         obj["tier_count"] = i;
         // obj["stamp_data_list"] = [{
         //     start: 3,

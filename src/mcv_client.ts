@@ -3,22 +3,28 @@ import { JsonData } from "./json_data"; // ボタン生成関数をインポー�
 // WebSocketオブジェクト
 // Localアクセスサーバー
 const MCV_WS_URL = "ws://localhost:51021";
-const webSocket = new WebSocket(MCV_WS_URL);
-// イベントハンドラの設定
+
+let webSocket = new WebSocket(MCV_WS_URL);
 webSocket.onopen = onOpen;
 webSocket.onmessage = onMessage;
 webSocket.onclose = onClose;
 webSocket.onerror = onError;
+
+function reconnect(){
+    webSocket = new WebSocket(MCV_WS_URL);
+    // イベントハンドラの設定
+    webSocket.onopen = onOpen;
+    webSocket.onmessage = onMessage;
+    webSocket.onclose = onClose;
+    webSocket.onerror = onError;
+}
 
 const comment_obj_array = new Array<JsonData>();
 var commentListener: Function;
 
 export function StartComment(listener: Function) {
     commentListener = listener;
-    setTimeout(
-        function () {
-            SendComment()
-        }, 100);
+    setTimeout(SendComment, 100);
 }
 
 // 接続イベント
@@ -55,11 +61,13 @@ function onMessage(this: WebSocket, event: MessageEvent) {
 
 // エラーイベント
 function onError(event: Event) {
+    // console.error(event.me);
+    webSocket.close();
 }
 
 // 切断イベント
 function onClose() {
-    // setTimeout(open(), 100);
+    setTimeout(reconnect, 1000);
 }
 
 
