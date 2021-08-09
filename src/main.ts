@@ -15,6 +15,7 @@ const FPS = 60;
 const DISPLAY_SEC = 5;
 const SPECIAL_DISPLAY_SEC1 = 7;
 const SPECIAL_DISPLAY_SEC2 = 10;
+const SPECIAL_DISPLAY_SEC3 = 13;
 const LINE_SPACING = 0;
 const TOP_MERGIN = 5;
 //画面横幅
@@ -36,7 +37,7 @@ const TEXT_SPECIAL_STYLE = new PIXI.TextStyle({
     // fill: ['#FF0000', '#00FF00', '#0000FF'],
     // fillGradientStops: [0.1, 0.7, 0.8],
     // fillGradientType: 1,
-    fontSize: 24,
+    fontSize: 36,
     lineJoin: "round",
     fontWeight: "900",
     strokeThickness: 3
@@ -193,8 +194,10 @@ function CreateSpecialToken(tier: number, count: number, comment: HtmlComment) {
         num = tier * count;
     }
     if (999 <= num) {
-        comment.displayTime = SPECIAL_DISPLAY_SEC2;
+        comment.displayTime = SPECIAL_DISPLAY_SEC3;
     } else if (99 <= num) {
+        comment.displayTime = SPECIAL_DISPLAY_SEC2;
+    } else if (9 <= num) {
         comment.displayTime = SPECIAL_DISPLAY_SEC1;
     } else {
 
@@ -372,7 +375,7 @@ function CreateSpecialContainer(specialStage: PIXI.Container, name: string, num:
         if (1 < num) {
             numText = GetSpecialText("x " + num.toString());
             numText.x = pointX;
-            numText.y = 20;
+            numText.y = 8;
             pointX = numText.x + numText.width;
         }
         /** Box **/
@@ -414,7 +417,7 @@ function CreateBox(pointX: number, color: number) {
 function CreateNameText(text: string, x: number) {
     const nameText = GetSpecialText(text);
     nameText.x = x + 3;
-    nameText.y = 20;
+    nameText.y = 7;
     nameText.name = SPRITE_NAME;
     return nameText;
 }
@@ -469,7 +472,7 @@ window.requestAnimationFrame(animate);
 if (IS_DEBUG) {
     setInterval(function () {
         const obj = new JsonData();
-        obj["user_data"] = { name: "kui", img: "https://pbs.twimg.com/profile_images/2235314315/IMG_0332_400x400.JPG", is_master: true };
+        obj["user_data"] = { name: "■Ｗ＿KUI", img: "https://pbs.twimg.com/profile_images/2235314315/IMG_0332_400x400.JPG", is_master: true };
         var comment = "TEST:" + TEST_COUNT++;
         const length = getRandomInt(10);
         for (var i = 0; i < length; i++) {
@@ -479,7 +482,9 @@ if (IS_DEBUG) {
         // obj["comment"] = "あああ*あああ";
         // obj["html_comment"] = "あああ[/1021]あああ";
         obj["type"] = "Service";
-        obj["tier_count"] = i;
+        obj["tier_count"] = length;
+        obj["tier"] = 2;
+        // obj["tier"] = 1999;
         // obj["stamp_data_list"] = [{
         //     start: 3,
         //     end: 9,
@@ -489,7 +494,6 @@ if (IS_DEBUG) {
         // }]
         const stream_data = { stream_name: "", service_name: "", service_type: "Mildom" };
         // if (i < 3) {
-        obj["tier"] = 0;
         obj["stream_data"] = stream_data;
         if (length < 5) {
             obj["stamp_data_list"] = [{
@@ -643,7 +647,6 @@ if (IS_DEBUG) {
                 height: 50,
             }]
         }
-        obj["tier"] = 1999;
         // obj["stream_data"] = stream_data;
         obj["stamp_data_list"] = [{
             start: 0,
