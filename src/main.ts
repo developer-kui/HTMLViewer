@@ -7,7 +7,7 @@ import * as PIXI from "pixi.js";
 //Debugモード
 var IS_DEBUG = false;
 /************************************************/
-const VERSION = "nico_5.0.1.1";
+const VERSION = "nico_5.0.1.2";
 const TokenListLine = new Array<Array<HtmlComment>>();
 //フレームレート
 const FPS = 60;
